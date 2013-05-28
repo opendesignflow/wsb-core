@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Envelope xmlns="http://www.w3.org/2001/12/soap-envelope">
+    <Header>
+        <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">1639849688
+        </wsa:MessageID>
+        <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">example.echo</wsa:Action>
+    </Header>
+    <Body>
+        <example:EchoRequest xmlns:example="com:idyria:osi:examples"
+            pid="0">Howwwdyyy</example:EchoRequest>
+    </Body>
+
+    <Envelope xmlns="http://www.w3.org/2001/12/soap-envelope">
+        <Header>
+            <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">1639849688
+            </wsa:MessageID>
+            <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">example.echo</wsa:Action>
+        </Header>
+        <Body>
+            <example:EchoResponse xmlns:example="com:idyria:osi:examples">Echo
+                "Howwwdyyy" to Process 0</example:EchoResponse>
+        </Body>
+    </Envelope>
+
+</Envelope>

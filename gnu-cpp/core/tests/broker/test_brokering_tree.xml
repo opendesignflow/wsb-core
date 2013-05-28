@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BrokeringTree xmlns="urn:idyria:osi:wsf:wsb:brokeringtree">
+
+    <Intermediary name="dummy" id ="top1">
+    
+    
+        <Intermediary name="dummy"/>
+        
+    </Intermediary>
+    
+    <Intermediary name="dummy" id ="top2">
+    
+    
+        <Intermediary name="dummy"/>
+        
+    </Intermediary>
+
+
+</BrokeringTree>

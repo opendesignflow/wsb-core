@@ -1,0 +1,55 @@
+##############################
+##############################
+## Unit Tests Definitions
+##############################
+##############################
+#odfi_libs_find(boost_unit_test_framework )
+#odfi_libs_find(gtest)
+
+
+
+## Brokering Tree
+#########################
+odfi_add_source_folder_to_group(tests_sources tests/broker)
+
+## TCP
+#########################
+odfi_add_source_folder_to_group(tests_sources tests/connector/tcp)
+
+
+##############################
+## Lib Std
+##############################
+
+
+## SAML2
+#########################
+odfi_add_source_folder_to_group(tests_sources tests/libstd/saml2/)
+
+
+## SOAP
+############################
+odfi_add_source_folder_to_group(tests_sources tests/libstd/message-soap/)
+
+add_executable(wsb_core_regressions tests/wsb_core_regressions.cpp ${tests_sources})
+target_link_libraries(wsb_core_regressions ${OdfiLibs} wsb_core)
+set_property(TARGET wsb_core_regressions PROPERTY COMPILE_FLAGS "-std=gnu++0x -Wall -Wl,-z,defs")
+
+
+##############################
+## VXML
+##############################
+
+odfi_add_source_folder_to_group(vxml_tests_sources
+    tests/vxml/vdom
+    tests/vxml/vxpath
+
+    tests/vxml-libxml2/
+    tests/vxml-libxml2/vdom
+)
+
+
+add_executable(vxml_regressions tests/vxml_regressions.cpp ${vxml_tests_sources})
+target_link_libraries(vxml_regressions ${OdfiLibs} wsb_core)
+set_property(TARGET vxml_regressions PROPERTY COMPILE_FLAGS "-std=gnu++0x -Wall -Wl,-z,defs")
+#odfi_enable_openmp(vxml_regressions)

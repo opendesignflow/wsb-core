@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<r:regression xmlns:r="http://regression" attr0="test">
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    <r:l1subelement>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+</r:regression>

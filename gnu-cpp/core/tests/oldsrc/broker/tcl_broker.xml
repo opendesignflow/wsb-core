@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BrokeringTree xmlns="urn:euvni:wsb:brokeringtree">
+
+    <Intermediary name="WSAddressing">
+        <Intermediary name="TCLInvoke"/>
+    </Intermediary>
+
+
+</BrokeringTree>

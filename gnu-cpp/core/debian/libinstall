@@ -1,0 +1,5 @@
+apt-get install liblog4cpp5-dev libuuid1-dev libxerces-c3.1-dev libxqilla6-dev
+
+KARMIC:
+
+apt-get install liblog4cpp5-dev uuid-dev libxerces-c3-dev libxqilla-dev

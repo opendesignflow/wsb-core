@@ -1,0 +1,28 @@
+##############################
+##############################
+## Unit Tests Definitions
+##############################
+##############################
+#odfi_libs_find(boost_unit_test_framework )
+#odfi_libs_find(gtest_main)
+
+## Add WSB Core test lib
+include_directories(${${CMAKE_PROJECT_NAME}_SOURCE_DIR}/../core/tests/)
+
+##############################
+## Intermediaries
+##############################
+
+
+## RCPHandler callup intermediary
+#########################
+odfi_add_source_folder_to_group(tests_sources tests/callup)
+
+
+
+##############################
+## Target
+##############################
+
+add_executable(wsb_libremote_regressions tests/wsb_libremote_regressions.cpp ${tests_sources})
+target_link_libraries(wsb_libremote_regressions ${OdfiLibs} wsb_lib_remote xerces-c)

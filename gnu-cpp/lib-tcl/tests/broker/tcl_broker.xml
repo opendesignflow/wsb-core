@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This brokering tree to Execute scripts given in WSAction -->
+<BrokeringTree xmlns="urn:euvni:wsb:brokeringtree">
+
+    <Intermediary name="HeaderInjectTimestamp">
+        <Intermediary name="TCLInvoke"></Intermediary>
+    </Intermediary>
+
+</BrokeringTree>

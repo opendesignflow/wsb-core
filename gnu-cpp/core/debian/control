@@ -1,0 +1,11 @@
+Source: wsb-core
+Section: devel
+Priority: extra
+Maintainer: Richard Leys <richard.leys@ziti.uni-heidelberg.de>
+Standards-Version: 3.9.2
+Homepage: http://ra.ziti.uni-heidelberg.de/
+
+Package: wsb-core
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Webservices Broker Library

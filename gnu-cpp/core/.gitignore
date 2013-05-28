@@ -1,0 +1,12 @@
+/CMakeFiles
+/Makefile
+/CMakeCache.txt
+/cmake_install.cmake
+/build
+*.rpm
+/CPackConfig.cmake
+/install_manifest.txt
+/CPackSourceConfig.cmake
+/_CPack_Packages
+install
+/Doxyfile

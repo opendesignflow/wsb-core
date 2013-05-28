@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<r:regression xmlns:r="http://regression" attr0="test">
+
+    <r:l1subelement index='0'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='1'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='2'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='3'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='4'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='5'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='6'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+    <r:l1subelement index='7'>
+        <r:l2subelement></r:l2subelement>
+    </r:l1subelement>
+    
+</r:regression>

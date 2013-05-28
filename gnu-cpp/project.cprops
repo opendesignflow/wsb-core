@@ -1,0 +1,20 @@
+
+## Set Version
+#######################
+set (${CMAKE_PROJECT_NAME}_VERSION_MAJOR 1)
+set (${CMAKE_PROJECT_NAME}_VERSION_MINOR 0)
+set (${CMAKE_PROJECT_NAME}_VERSION_PATCH 0)
+
+
+## Find ODFI  modules
+#####################################
+
+set(CMAKE_MODULE_PATH "$ENV{ODFI_CPP_CMAKE_MODULES}")
+find_package(OdfiLibs REQUIRED)
+find_package(OdfiPackageUtils REQUIRED)
+find_package(OdfiGtest REQUIRED)
+find_package(OdfiLLVM REQUIRED)
+
+## Update Version With GIT revision
+##########################################
+odfi_update_path_version_with_git()
