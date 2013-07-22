@@ -3,6 +3,8 @@
  */
 package com.idyria.osi.wsb.core.broker.tree
 
+import com.idyria.osi.wsb.core.message.Message
+
 import scala.util.matching.Regex
 import com.idyria.osi.ooxoo.core.buffers.structural.XList
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
@@ -23,6 +25,30 @@ class Intermediary extends ElementBuffer {
 
   @xelement
   var intermediaries : XList[Intermediary] = XList[Intermediary] {  new Intermediary }
+
+  // Up/ Down closures for user processing
+  //---------------
+  var downClosure : ( Message => Unit) = null
+
+  var upClosure : ( Message => Unit) = null
+
+
+  // Up/Down runtime
+  //---------------
+  final def down( message: Message) = {
+
+  }
+
+  final def up(message: Message) = {
+
+  }
+
+  def intermediaryTest = println("Hi!")
+
+}
+
+object Intermediary {
+
 
 
 }

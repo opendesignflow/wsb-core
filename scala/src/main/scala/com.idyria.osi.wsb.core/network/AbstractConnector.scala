@@ -12,28 +12,47 @@ import com.idyria.osi.wsb.core.Logsource
  */
 abstract class AbstractConnector extends Thread with Lifecycle with Logsource {
 
-  var direction = ""
-  
   /**
-   * Set to true on sto, implementin Thread must stop when this is set to true
+    Network This Connector is registered under
+  */
+  var network : Network = null
+
+
+  /**
+    CLIENT/SERVER Direction
+  */
+  var direction = AbstractConnector.Direction.Server
+
+  /**
+   * Set to true on stop, implementin Thread must stop when this is set to true
    */
   var stopThread = false
-  
-    
+
+
   /**
-   * Start a connector by starting a thrad
+   * Start a connector by starting a thread
    */
   def lStart = {
-    
+
     this.start()
-    
-    
+
+
   }
-  
+
   /**
    * To be implemented by Server connector
    */
   override def run
-    
-  
+
+
+}
+
+object AbstractConnector {
+
+   object Direction extends Enumeration {
+      type Direction = Value
+      val Client , Server = Value
+   }
+
+
 }

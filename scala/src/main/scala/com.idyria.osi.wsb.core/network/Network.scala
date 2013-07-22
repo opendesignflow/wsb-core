@@ -3,44 +3,67 @@
  */
 package com.idyria.osi.wsb.core.network
 
-import com.idyria.osi.wsb.core.Lifecycle
+import com.idyria.osi.wsb.core._
 
 /**
  * @author rleys
  *
  */
-class Network {
+class Network ( var engine : WSBEngine ) extends Lifecycle {
 
-}
-object Network extends Lifecycle {
-  
-  
-  var connectors = scala.collection.mutable.Set[AbstractConnector]()
-  
+  var connectors = Set[AbstractConnector]()
+
+  // Engine Connection
+  //-------------
+
+  /**
+    Method to send an event to the local Engine internal Bus
+  */
+  def ! ( msg :  AnyRef) = this.engine ! msg
+
+
+  // Connectors Management
+  //--------------------
+  def addConnector ( connector : AbstractConnector) = {
+
+    connector.network = this
+    connectors += connector
+
+  }
+
+  // Lifecycle
+  //---------------------
+
   def lInit = {
-    
+
     // Init Connectors
     this.connectors.foreach(_.cycleToInit)
-    
+
   }
-  
+
   /**
    * Start WSBEngine
    */
   def lStart = {
-    
+
     // Start connectors
     this.connectors.foreach(_.cycleToStart)
-    
+
   }
-  
+
   def lStop = {
-    
+
     // Stop connectors
     this.connectors.foreach(_.cycleToStop)
-    
-    
+
+
   }
-  
-  
+
+}
+object Network  {
+
+
+
+
+
 }
