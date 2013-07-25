@@ -210,7 +210,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
             while(!this.stopThread) {
 
                 var selected = selector.select
-                println("Updated selected keys updated with: "+selected+" keys")
+                //println("Updated selected keys updated with: "+selected+" keys")
                 if (selected>0) {
 
                     var keyIterator = selector.selectedKeys.iterator;

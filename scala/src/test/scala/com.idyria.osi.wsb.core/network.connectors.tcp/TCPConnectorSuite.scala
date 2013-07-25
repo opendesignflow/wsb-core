@@ -30,16 +30,8 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
             given("A started connector")
             //---------------------
-
-            var started = new Semaphore(0);
             var connector = new TCPConnector() {
                 port=9898
-
-                on( "server.started") {
-
-                    println("Wow, Connector is started")
-                    started.release
-                }
 
                 // Dummy
                 def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) = {
@@ -54,12 +46,13 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
 
             }
-            connector.cycleToInit
+
 
             //-- Start It
+            connector.cycleToInit
             connector.cycleToStart
 
-            assert(started.tryAcquire(1,TimeUnit.SECONDS) == true)
+            assert(connector.started.tryAcquire(1,TimeUnit.SECONDS) == true)
 
             then("it can be stoped and cleaned")
             //----------------------
@@ -117,7 +110,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 }
 
             }
-
+            assert(connector.started.tryAcquire(1,TimeUnit.SECONDS) == true)
 
 
 
@@ -184,6 +177,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 }
 
             }
+            assert(connector.started.tryAcquire(1,TimeUnit.SECONDS) == true)
 
             then("Make a simple Standard Socket connection, and send a line of data")
             //------------------
