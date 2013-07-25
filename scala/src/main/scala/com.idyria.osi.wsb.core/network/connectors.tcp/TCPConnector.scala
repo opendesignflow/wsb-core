@@ -274,7 +274,13 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
                                             // Pass Datas to underlying protocol
                                             readBuffer.flip
-                                            protocolReceiveData(readBuffer,networkContext)
+
+                                            var passedBuffer = ByteBuffer.allocate(readbytes)
+                                            passedBuffer.put(readBuffer)
+                                            passedBuffer.rewind
+
+                                            //readBuffer.clear
+                                            protocolReceiveData(passedBuffer,networkContext)
 
 
                                             // Clear Buffer for next read
@@ -372,7 +378,12 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
                         // Pass Datas to underlying protocol
                         readBuffer.flip
-                        protocolReceiveData(readBuffer,this.clientNetworkContext)
+
+                        var passedBuffer = ByteBuffer.allocate(readbytes)
+                        passedBuffer.put(readBuffer)
+                        passedBuffer.rewind
+
+                        protocolReceiveData(passedBuffer,this.clientNetworkContext)
 
 
                         // Clear Buffer for next read
@@ -404,7 +415,7 @@ abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNe
 
     // Protocol Implementation
     //----------------
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit = {
 
         // Receive through Protocol handler
         //---------------
@@ -412,7 +423,7 @@ abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNe
 
     }
 
-    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
 
 
         ProtocolHandler(context,protocolHandlerFactory).send(buffer)

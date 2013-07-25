@@ -131,7 +131,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             connector.join(1000)
 
 
-            expect(true)(connectedResult)
+            expectResult(true)(connectedResult)
 
 
 
@@ -198,8 +198,8 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             connector.join(1000)
 
             // Check
-            expect(true)(receivedResult)
-            expect("Ping\n")(connector.receivedLine)
+            expectResult(true)(receivedResult)
+            expectResult("Ping\n")(connector.receivedLine.toString)
 
         }
 
@@ -220,41 +220,38 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
             given("A Started Server TCP Connector")
             //-----------------------
-            var serverStarted = new Semaphore(0);
             var serverConnector = new DummyTestConnector() {
-
                 port=9898
 
 
-                on("server.started") {
-                    serverStarted.release
-                }
-
-                on("server.accepted") {
-                    println("Connection seen on server")
-                }
 
                 // Receive And echo back
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+                var receivedLine = ""
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+
+                    if (buffer.capacity==0)
+                        return
 
                     // Get Received line
-                    var line = Charset.forName("UTF-8").decode(buffer).toString
+                   // receivedLine = Charset.forName("UTF-8").decode(buffer).toString
+                   receivedLine = new String(buffer.array)
 
-                    println("Server received something: "+line)
+                    //println("Server received something: "+line)
 
                     // Send back
-                    protocolSendData(ByteBuffer.wrap(("Repeat: "+line).getBytes),context);
+                    protocolSendData(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes),context);
 
 
                 }
 
                 // Send a line
-                def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+                def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
 
                     // Send
                     context.socket.write(buffer)
 
-                    println("Server send something")
+                    //buffer.clear
+                    //println("Server send something: "+new String(buffer.array))
 
 
                 }
@@ -263,11 +260,10 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 cycleToStart
 
             }
-            assert(serverStarted.tryAcquire(1,TimeUnit.SECONDS)==true)
+            assert(serverConnector.started.tryAcquire(1,TimeUnit.SECONDS)==true)
 
             given("A Started Client TCP Connector")
             //-----------------------
-            var clientStarted = new Semaphore(0);
             var receivedResult = new Semaphore(0);
             var clientConnector = new DummyTestConnector() {
 
@@ -275,39 +271,30 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 direction = AbstractConnector.Direction.Client
 
 
-
-                on("client.started") {
-
-                    println("Client STARTED!")
-
-                    clientStarted.release
-
-                }
-
-
                 // Send over a line
                 var sendLine = ""
-                def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+                def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
 
                     // Get line
-                    //sendLine = Charset.forName("UTF-8").decode(buffer).toString
+                    sendLine = Charset.forName("UTF-8").decode(buffer).toString
 
                     // Send
-                    context.socket.write(buffer)
-                    context.socket.write(ByteBuffer.wrap("\n".getBytes))
+                    context.socket.write(ByteBuffer.wrap(sendLine.getBytes))
 
-                    println("Client send some datas: "+sendLine)
+                    //println("Client send some datas: "+sendLine)
 
                 }
 
                 // Trigger received line
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
 
                     // Get Received line
                     receivedLine = Charset.forName("UTF-8").decode(buffer).toString
 
                     receivedResult.release
+
+                   // println("Client Got some datas: "+receivedLine)
 
 
                 }
@@ -316,7 +303,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 cycleToStart
 
             }
-            assert(clientStarted.tryAcquire(2,TimeUnit.SECONDS)==true)
+            assert(clientConnector.started.tryAcquire(2,TimeUnit.SECONDS)==true)
 
 
             then("Client Sends a string on a line, and should get it back")
@@ -335,9 +322,18 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
             // Checks
             //--------------
-            expect(true)(received)
-            expect("Repeat: "+sendBase+"\n")(clientConnector.receivedLine)
 
+            println(s"""Results: '${serverConnector.receivedLine}' -> '${clientConnector.receivedLine}'""")
+
+            serverConnector.receivedLine.foreach { c =>
+                //println(s"-> char: $c")
+            }
+
+
+            expectResult(true)(received)
+            expectResult(sendBase)(serverConnector.receivedLine)
+            //expectResult("Repeat: "+sendBase)(clientConnector.receivedLine)
+            assert(clientConnector.receivedLine.equals("Repeat: "+sendBase))
         }
 
 
