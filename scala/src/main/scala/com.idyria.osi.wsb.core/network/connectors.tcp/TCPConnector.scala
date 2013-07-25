@@ -42,6 +42,8 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     */
     var port = 8083
 
+
+
     // Server Runtime Fields
     //-----------
 
@@ -64,6 +66,29 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     var clientSocket : SocketChannel = null
 
     var clientNetworkContext : TCPNetworkContext = null
+
+
+
+    // Protocol Implementation
+    //----------------
+
+    /**
+        Send through protocol
+
+        @throw RuntimeExeception if no client context is available
+    */
+    def send(buffer : ByteBuffer) = {
+
+        require(this.clientNetworkContext!=null)
+
+        protocolSendData(buffer,this.clientNetworkContext)
+
+
+    }
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext)
+
+    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext)
+
 
 
     // LifeCycle
@@ -136,6 +161,12 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     // Connector Run Method
     //------------------------
 
+    //-- React on common started to signal ready to go
+    on("common.started") {
+
+        started.release(Integer.MAX_VALUE)
+    }
+
     /**
         Start this connector in Listening mode if in SERVER direction,
         or tries to connect to  target address if in CLIENT direction
@@ -175,6 +206,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
             // Loop on Selection and handle actions
             //------------------
             @->("server.started")
+            @->("common.started")
             while(!this.stopThread) {
 
                 var selected = selector.select
@@ -326,6 +358,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
             logInfo(s"Client Started")
 
             @->("client.started")
+            @->("common.started")
 
             // Data Loop
             //------------------------
@@ -358,11 +391,6 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     }
 
 
-    // Protocol Implementation
-    //----------------
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext)
-
-    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext)
 }
 
 
@@ -370,7 +398,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     This class is an implementation of TCPConnector, handing out application protocol management to a Protocolhandler class
 
 */
-abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNetworkContext => ProtocolHandler) ) extends TCPConnector {
+abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNetworkContext => ProtocolHandler[ByteBuffer]) ) extends TCPConnector {
 
 
 

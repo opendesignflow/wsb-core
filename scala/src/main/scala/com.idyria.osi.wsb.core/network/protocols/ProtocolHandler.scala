@@ -6,14 +6,25 @@ import  com.idyria.osi.wsb.core.network._
 import java.nio.channels._
 import java.nio._
 
+import scala.collection.mutable._
+
 
  /**
     This class is created per client to handle the datas and decode protocol
 */
-abstract class ProtocolHandler(var context : NetworkContext) {
+abstract class ProtocolHandler[DT <: Any](var context : NetworkContext)  {
 
 
-    def receive(buffer : ByteBuffer)
+    /**
+        This stack holds the data that are available from receive
+    */
+    var availableDatas = new ArrayStack[DT]()
+
+    /**
+
+        @return true if receiving is completed, and some data is available, false otherwise
+    */
+    def receive(buffer : ByteBuffer) : Boolean
 
     def send (buffer: ByteBuffer) : ByteBuffer
 
@@ -22,7 +33,7 @@ abstract class ProtocolHandler(var context : NetworkContext) {
 // Companion object to get Protocol Handler from Network Context
 object ProtocolHandler {
 
-    def apply[T <: NetworkContext]( context : T, factory: (T => ProtocolHandler)) :ProtocolHandler = {
+    def apply[T <: NetworkContext,DT]( context : T, factory: (T => ProtocolHandler[DT])) :ProtocolHandler[DT] = {
 
         // Create Procotol handler if non existent
         //----------------
@@ -31,8 +42,15 @@ object ProtocolHandler {
         }
 
         // Return
-        context.attachments("protocolHandler").asInstanceOf[ProtocolHandler]
+        context.attachments("protocolHandler").asInstanceOf[ProtocolHandler[DT]]
 
   }
+
+}
+
+
+class ProtocolHandlerException(var message : String) extends Exception(message) {
+
+
 
 }

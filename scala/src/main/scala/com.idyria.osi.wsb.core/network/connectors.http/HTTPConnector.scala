@@ -12,6 +12,8 @@ import javax.net.ServerSocketFactory
 import java.io.PrintStream
 import com.idyria.osi.wsb.core.broker.MessageBroker
 
+import java.nio._
+
 /**
  * @author rleys
  *
@@ -30,6 +32,8 @@ class HTTPConnector( var port : Int ) extends AbstractConnector {
    */
   var clientSocketsMap =  scala.collection.mutable.Map[String,ClientHandler]()
 
+
+  def send(buffer : ByteBuffer) = { }
 
   /**
    * Handles a client Socket
