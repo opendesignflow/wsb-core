@@ -10,7 +10,7 @@ import com.idyria.osi.wsb.core.network.protocols.ProtocolHandler
 import com.idyria.osi.wsb.core.broker.MessageBroker
 import com.idyria.osi.wsb.core.network._
 
-import com.idyria.osi.tea.listeningpoints.ListeningSupport
+import com.idyria.osi.tea.listeners.ListeningSupport
 
 import scala.io.Source
 import javax.net.ServerSocketFactory

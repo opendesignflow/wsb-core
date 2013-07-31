@@ -5,7 +5,7 @@ import com.idyria.osi.wsb.core.network._
 import com.idyria.osi.wsb.core.network.connectors.tcp._
 import com.idyria.osi.wsb.core.network.protocols._
 
-import com.idyria.osi.tea.listeningpoints.ListeningSupport
+import com.idyria.osi.tea.listeners.ListeningSupport
 
 import java.nio.channels._
 import java.nio._
