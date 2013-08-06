@@ -25,7 +25,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Given("A Client Protocol Handler")
         //-------------
-
+ 
         var clientHandler = new SimpleProtocolHandler(new NetworkContext)
 
 
@@ -37,7 +37,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         println("Result: "+new String(sendResult.array()))
 
         Then("Output must match protocol")
-        expect(expectedResult)(new String(sendResult.array()))
+        expectResult(expectedResult)(new String(sendResult.array()))
 
 
 
@@ -95,11 +95,11 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("Last returned boolean must be true")
         //---------------
-        expect(true)(lastResult)
+        expectResult(true)(lastResult)
 
         And("The Produced Data must be the message")
         //------------------------------
-        expect(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
 
     }
 
@@ -135,12 +135,12 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("Last returned boolean must be true")
         //---------------
-        expect(true)(lastResult)
-        expect(1)(serverHandler.availableDatas.size)
+        expectResult(true)(lastResult)
+        expectResult(1)(serverHandler.availableDatas.size)
 
         And("The Produced Data must be the message")
         //------------------------------
-        expect(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
 
 
     }

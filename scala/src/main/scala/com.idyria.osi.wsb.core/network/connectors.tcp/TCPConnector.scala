@@ -191,7 +191,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
             // Bind
             //--------------
-            this.serverSocket.bind(new InetSocketAddress(address,port))
+            this.serverSocket.socket.bind(new InetSocketAddress(address,port))
 
 
 

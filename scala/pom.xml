@@ -3,11 +3,11 @@
   <groupId>com.idyria.osi.wsb</groupId>
   <artifactId>wsb-core</artifactId>
   <version>3.0.0-SNAPSHOT</version>
-  <name>WSB Core 3 (Scala rewrite)</name>
+  <name>WSB Core</name>
   <parent>
         <groupId>com.idyria.osi</groupId>
         <artifactId>superpom-scala</artifactId>
-        <version>2.10.1.r10</version>
+        <version>2.10.1.r13</version>
   </parent>
 
   <!-- Repositories to find OSI packages -->

@@ -10,6 +10,8 @@ import java.util.concurrent._
 
 import java.nio._
 
+import scala.language.implicitConversions
+
 /**
  * @author rleys
  *

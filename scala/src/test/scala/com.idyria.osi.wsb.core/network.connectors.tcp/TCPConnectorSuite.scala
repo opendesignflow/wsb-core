@@ -1,6 +1,7 @@
 package com.idyria.osi.wsb.core.network.connectors.tcp
 
 import scala.collection.JavaConversions._
+import scala.language.reflectiveCalls
 
 import java.util.concurrent._
 
@@ -28,7 +29,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
         scenario("Server Socket Channel Setup") {
 
-            given("A started connector")
+            Given("A started connector")
             //---------------------
             var connector = new TCPConnector() {
                 port=9898
@@ -54,7 +55,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
             assert(connector.started.tryAcquire(1,TimeUnit.SECONDS) == true)
 
-            then("it can be stoped and cleaned")
+            Then("it can be stoped and cleaned")
             //----------------------
 
             //-- Stop It
@@ -77,7 +78,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
         scenario("Server Socket Accept connection") {
 
 
-            given("A Started TCP Connector")
+            Given("A Started TCP Connector")
             //-----------------
             var contextIdentifier = ""
             var connected = new Semaphore(0);
@@ -114,13 +115,13 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
 
 
-            then("Make a simple  Standard Socket connection")
+            Then("Make a simple  Standard Socket connection")
             //------------------
             var sock = new Socket("localhost",9898)
 
 
 
-            then("The Accepted connection handle should trigger the connected semaphore")
+            Then("The Accepted connection handle should trigger the connected semaphore")
             //---------------
 
             var connectedResult = connected.tryAcquire(1,TimeUnit.SECONDS)
@@ -142,7 +143,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
         scenario("Server Socket Read a data line") {
 
-            given("A Started TCP Connector")
+            Given("A Started TCP Connector")
             //-----------------
             var received = new Semaphore(0);
             var connector = new TCPConnector() {
@@ -179,7 +180,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             }
             assert(connector.started.tryAcquire(1,TimeUnit.SECONDS) == true)
 
-            then("Make a simple Standard Socket connection, and send a line of data")
+            Then("Make a simple Standard Socket connection, and send a line of data")
             //------------------
             var socket = new Socket("localhost",9898)
 
@@ -218,7 +219,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
         scenario("Client / Exchanges a line with server") {
 
-            given("A Started Server TCP Connector")
+            Given("A Started Server TCP Connector")
             //-----------------------
             var serverConnector = new DummyTestConnector() {
                 port=9898
@@ -262,7 +263,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             }
             assert(serverConnector.started.tryAcquire(1,TimeUnit.SECONDS)==true)
 
-            given("A Started Client TCP Connector")
+            Given("A Started Client TCP Connector")
             //-----------------------
             var receivedResult = new Semaphore(0);
             var clientConnector = new DummyTestConnector() {
@@ -306,7 +307,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             assert(clientConnector.started.tryAcquire(2,TimeUnit.SECONDS)==true)
 
 
-            then("Client Sends a string on a line, and should get it back")
+            Then("Client Sends a string on a line, and should get it back")
             //------------------------------
             var sendBase = "Hello"
             clientConnector.protocolSendData(ByteBuffer.wrap(sendBase.getBytes),clientConnector.clientNetworkContext)

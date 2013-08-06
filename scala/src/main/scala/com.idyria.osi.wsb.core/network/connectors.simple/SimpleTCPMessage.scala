@@ -30,7 +30,7 @@ class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector( ctx => new 
 object SimpleMessageTCPConnector {
 
 
-    implicit def convertStringToByteBuffer(str : String ) : ByteBuffer = ByteBuffer.wrap(str.getBytes)
+    //implicit def convertStringToByteBuffer(str : String ) : ByteBuffer = ByteBuffer.wrap(str.getBytes)
 
 }
 
