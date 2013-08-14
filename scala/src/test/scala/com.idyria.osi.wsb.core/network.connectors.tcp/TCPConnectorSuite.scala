@@ -17,6 +17,7 @@ import java.net.URL
 import java.io._
 import java.nio._
 import java.nio.charset._
+import java.nio.channels._
 
 import com.idyria.osi.wsb.core.network.AbstractConnector
 
@@ -44,8 +45,6 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 }
 
-
-
             }
 
 
@@ -72,6 +71,16 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     assert(false)
                 }
             }
+
+            And("Port is resusable")
+            //--------------------------
+            
+            var serverSocket = ServerSocketChannel.open();
+            serverSocket.bind(new InetSocketAddress("localhost",9898))
+            serverSocket.close
+
+            // Check states
+            //expectResult(false)(connector.serverSocket.socket.isBound)
 
         }
 

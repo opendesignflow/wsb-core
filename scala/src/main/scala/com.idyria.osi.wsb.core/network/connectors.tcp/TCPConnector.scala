@@ -49,11 +49,23 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
     /**
         Server Socket used for server connection
+
+        @group server
     */
     var serverSocket : ServerSocketChannel = null
 
     /**
-    * Maps a string to te client handler, for backpath matching
+        Server Socket Selector
+
+        @group server
+    */
+    var serverSocketSelector : Selector = null
+
+    /**
+
+        Maps a string to te client handler, for backpath matching
+
+        @group server
     */
     var clientsContextsMap =  Map[String,TCPNetworkContext]()
 
@@ -104,9 +116,9 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
         // Create Server Socket
         //----------------------------
-        if (this.direction == AbstractConnector.Direction.Server) {
+        /*if (this.direction == AbstractConnector.Direction.Server) {
              this.serverSocket = ServerSocketChannel.open();
-        }
+        }*/
 
 
 
@@ -147,12 +159,22 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
     override def lStop = {
 
+        
+        // Stop all threads
+        this.stopThread = true
 
         // Stop Server socket
         //------------
         if (this.direction == AbstractConnector.Direction.Server) {
+
+            // Close Selector to stop operations on thread
+            this.serverSocketSelector.close
+
+        } else {
+
             this.stopThread = true
-            this.serverSocket.close
+            this.clientSocket.close
+        
         }
 
     }
@@ -191,16 +213,15 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
             // Bind
             //--------------
-            this.serverSocket.socket.bind(new InetSocketAddress(address,port))
-
-
+            this.serverSocket = ServerSocketChannel.open();
+            this.serverSocket.bind(new InetSocketAddress(address,port))
 
             // Register Selector for all operations
             // !! Selector only works on non blocking sockets
             //----------------------
-            var selector = Selector.open()
+            this.serverSocketSelector = Selector.open()
             this.serverSocket.configureBlocking(false);
-            this.serverSocket.register(selector,SelectionKey.OP_ACCEPT)
+            this.serverSocket.register(this.serverSocketSelector,SelectionKey.OP_ACCEPT)
 
 
             // Loop on Selection and handle actions
@@ -209,11 +230,16 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
             @->("common.started")
             while(!this.stopThread) {
 
-                var selected = selector.select
-                //println("Updated selected keys updated with: "+selected+" keys")
-                if (selected>0) {
+                try {
 
-                    var keyIterator = selector.selectedKeys.iterator;
+                    // Select blocking, will throw an exception if socket is closed
+                    var selected = this.serverSocketSelector.select
+
+
+                //println("Updated selected keys updated with: "+selected+" keys")
+                //if (selected>0) {
+
+                    var keyIterator = this.serverSocketSelector.selectedKeys.iterator;
                     while (keyIterator.hasNext) {
 
                         var key = keyIterator.next();
@@ -242,7 +268,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
                                 // !! Selector only works on non blocking sockets
                                 //-----------------
                                 clientSocket.configureBlocking(false);
-                                var clientSocketKey = clientSocket.register(selector,SelectionKey.OP_READ,SelectionKey.OP_WRITE)
+                                var clientSocketKey = clientSocket.register(this.serverSocketSelector,SelectionKey.OP_READ,SelectionKey.OP_WRITE)
 
                                 //-- Register NetworkContext with key
                                 clientSocketKey.attach(networkContext)
@@ -314,39 +340,28 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
                         keyIterator.remove
 
                     }
+                //}
+                // EOF if selected > 0
+
+                } catch {
+
+                    case e : java.nio.channels.ClosedSelectorException => 
+
+                    case e : Throwable => 
+                       
                 }
 
-
-            } // EOF thread loop
+            } // EOF Server thread loop
 
             // Clean
             //----------------
-            selector.close
+            this.serverSocketSelector = null 
 
+            this.serverSocket.close
+            this.serverSocket = null
 
             @->("server.end")
-            // Accept Connections
-            //---------------------------
-            /*try {
-                var clientSocket = this.serverSocket.accept();
-                if (clientSocket==null) {
-
-                  //-- Stop if connection broken
-                  this.stopThread = true
-
-                } else {
-
-                  //-- Launch handler thread and loop
-                  logInfo("Handling Connection")
-                  //var clientHandler = new ClientHandler(clientSocket)
-                  //clientHandler.start();
-
-                }
-            } catch {
-              case e : Throwable => {
-                this.stopThread = true
-              }
-            }*/
+            
         }
         // Client Mode
         //------------------------

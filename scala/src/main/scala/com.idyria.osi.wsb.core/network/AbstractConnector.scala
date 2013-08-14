@@ -29,7 +29,7 @@ abstract class AbstractConnector extends Thread with Lifecycle with Logsource {
   var direction = AbstractConnector.Direction.Server
 
   /**
-   * Set to true on stop, implementin Thread must stop when this is set to true
+   * Set to true on stop,  Thread implementation must stop when this is set to true
    */
   var stopThread = false
 
