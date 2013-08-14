@@ -46,6 +46,20 @@ object ProtocolHandler {
 
   }
 
+  def apply[T <: NetworkContext,DT]( context : T) :ProtocolHandler[DT] = {
+
+
+        // Return null Procotol handler if non existent
+        //----------------
+        if(!context.attachments.contains("protocolHandler")) {
+           return null
+        }
+
+        // Return
+        context.attachments("protocolHandler").asInstanceOf[ProtocolHandler[DT]]
+
+  }
+
 }
 
 

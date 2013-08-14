@@ -3,6 +3,7 @@ package com.idyria.osi.wsb.core.network.connectors.simple
 
 import org.scalatest._
 import com.idyria.osi.wsb.core.network._
+import com.idyria.osi.wsb.core.network.protocol._
 
 import java.nio._
 import java.io._
@@ -19,7 +20,10 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
     var messages : Map[String,String] = List(
         """<Envelope><Body></Body></Envelope>""",
         """<Envelope><Body></Body></Envelope>"""
-        ).map( m => (m -> s"""Content-Length: ${m.getBytes.length}\n$sendMessage""")).toMap
+        ).map { m => m -> s"""Content-Length: ${m.getBytes.length}\n$sendMessage""" }.toMap
+
+
+    println(s"Messages input vector has ${messages.size} elements" )
 
     test("Send Standalone") {
 
@@ -151,6 +155,29 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         //-------------
         var  serverHandler = new SimpleProtocolHandler(new NetworkContext)
 
+        When("Receiving in one pass on the server handler")
+        //---------------
+        var toSend = ByteBuffer.wrap(expectedResult.getBytes)
+        var lastResult = serverHandler.receive(toSend)
+
+        Then("The Produced Data must be the message")
+        //----------------
+        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+
+        When("Doing the same again")
+        //----------------
+
+        toSend = ByteBuffer.wrap(expectedResult.getBytes)
+        lastResult = serverHandler.receive(toSend)
+
+        Then("there are two available messages")
+        //--------------------
+        expectResult(2)(serverHandler.availableDatas.size)
+        expectResult(sendMessage)(new String(serverHandler.availableDatas.last.array()))
+    }
+
+    messages.foreach {
+        case (message , protocolMessage) => println(s"OO Message as input source: "+message)
     }
 
     messages.foreach {
@@ -164,16 +191,8 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
     }
 
 
-   /* test("Simple Protocol over TCP") {
+   test("Simple Protocol over TCP") {
 
-
-
-        var sendMessage = """
-            <Envelope>
-                <Body></Body>
-            </Envelope>
-
-        """
 
         Given("A client Simple TCP Connector")
         //-----------------------------------------
@@ -198,6 +217,8 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         Then("The message should come out of the handler")
         //--------------------------
 
+        // Get client context on server side to find back handler
+        var phandler = ProtocolHandler(server.clientsContextsMap.head._2)
 
 
         // Stop
@@ -205,7 +226,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         client.cycleToStop
         server.cycleToStop
 
-    }*/
+    }
 
 
 }
