@@ -3,10 +3,13 @@ package com.idyria.osi.wsb.core.network.connectors.simple
 
 import org.scalatest._
 import com.idyria.osi.wsb.core.network._
-import com.idyria.osi.wsb.core.network.protocol._
+import com.idyria.osi.wsb.core.network.protocols._
 
 import java.nio._
 import java.io._
+
+
+import java.util.concurrent._
 
 class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
@@ -191,7 +194,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
     }
 
 
-   test("Simple Protocol over TCP") {
+   test("Client to server send") {
 
 
         Given("A client Simple TCP Connector")
@@ -201,14 +204,24 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Given("A server Simple TCP Connector")
         //-----------------------------------------
+        var clientConnected = new Semaphore(0);
         var server = new SimpleMessageTCPConnector
-        server.cycleToStart
+        server.on("server.accepted") {
+            println("Server accepted connection")
+            clientConnected.release()
+        }
 
         Then("Start")
         //---------------------
         server.cycleToStart
         server.started.acquire
+
         client.cycleToStart
+        client.started.acquire
+
+        // (wait for connection)
+        clientConnected.acquire
+        expectResult(1,"Server has client context map")(server.clientsContextsMap.size)
 
         When("Sending a simple XML message through client")
         //--------------------
@@ -216,10 +229,14 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("The message should come out of the handler")
         //--------------------------
+        Thread.sleep(1000)
 
         // Get client context on server side to find back handler
-        var phandler = ProtocolHandler(server.clientsContextsMap.head._2)
+        var phandler : ProtocolHandler[ByteBuffer] = ProtocolHandler(server.clientsContextsMap.head._2)
+        assert(phandler!=null)
+        expectResult(1)(phandler.availableDatas.size)
 
+        expectResult(sendMessage)(new String(phandler.availableDatas.head.array()))
 
         // Stop
         //----------------------
@@ -227,6 +244,8 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         server.cycleToStop
 
     }
+
+    
 
 
 }

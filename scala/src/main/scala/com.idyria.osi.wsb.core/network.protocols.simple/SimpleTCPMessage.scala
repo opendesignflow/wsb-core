@@ -169,6 +169,8 @@ class SimpleProtocolHandler(var localContext : NetworkContext) extends ProtocolH
         res.put(ByteBuffer.wrap(contentLineBytes))
         res.put(buffer)
 
+        // Return
+        //-------------
         return res
 
 

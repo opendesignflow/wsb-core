@@ -39,15 +39,21 @@ object ProtocolHandler {
         //----------------
         if(!context.attachments.contains("protocolHandler")) {
             context.attachments += ("protocolHandler" -> factory(context) )
+        
+            //println("Added protocol handler instance to context: "+context)
         }
 
         // Return
         context.attachments("protocolHandler").asInstanceOf[ProtocolHandler[DT]]
 
+
+
   }
 
   def apply[T <: NetworkContext,DT]( context : T) :ProtocolHandler[DT] = {
 
+
+        //println("Getting protocol handler instance from context: "+context)
 
         // Return null Procotol handler if non existent
         //----------------

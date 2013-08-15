@@ -13,10 +13,17 @@ import java.nio._
 import scala.language.implicitConversions
 
 /**
+    Base class for Connectors.
+    Contains the base parameters for handling connectors.
+
+    The run() method of Thread should implement the long running I/O handling
+
+    As type parameter must be given the NetworkContext type for the connector implementation
+
  * @author rleys
  *
  */
-abstract class AbstractConnector extends Thread with Lifecycle with Logsource {
+abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with Logsource {
 
   /**
     Network This Connector is registered under
@@ -47,6 +54,12 @@ abstract class AbstractConnector extends Thread with Lifecycle with Logsource {
     Used by clients to send datas
   */
   def send(data: ByteBuffer)
+
+  /**
+    Used to send to a specific network context peer
+    Typically used by a server side that can handle multiple clients
+  */
+  def send(data:ByteBuffer, context: NT) 
 
   // Lifecycle
   //-----------------

@@ -27,7 +27,7 @@ import java.nio._
 
 
 */
-abstract class TCPConnector extends AbstractConnector with ListeningSupport {
+abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
 
 
 
@@ -91,15 +91,51 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
     */
     def send(buffer : ByteBuffer) = {
 
-        require(this.clientNetworkContext!=null)
+        // Client
+        //-----------------
 
-        protocolSendData(buffer,this.clientNetworkContext)
+        require(this.clientNetworkContext!=null)
+        
+        //-- Pass to protocol implementation
+        var resBuffer = protocolSendData(buffer,this.clientNetworkContext)
+
+        //-- Send
+
+       /*println(s"""
+            Sending from client to server on socket:
+                 ${resBuffer.remaining} bytes
+                 limit: ${resBuffer.limit}
+                 position: ${resBuffer.position}
+                 capacity: ${resBuffer.capacity} bytes
+            """)
+    */
+
+        this.clientNetworkContext.socket.write(resBuffer)
 
 
     }
+
+    /**
+        Send for server side,
+    */
+    def send(buffer:ByteBuffer, context: TCPNetworkContext) = {
+
+        //-- Pass to protocol implementation
+        var resBuffer = protocolSendData(buffer,context)
+
+        //-- Send
+        context.socket.write(resBuffer)
+
+    }
+
     def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext)
 
-    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext)
+    /**
+        Calls send Data  through protocol implementation
+
+        @return A Resulting ByteBuffer to be send over socket
+    */
+    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : ByteBuffer
 
 
 
@@ -235,10 +271,6 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
                     // Select blocking, will throw an exception if socket is closed
                     var selected = this.serverSocketSelector.select
 
-
-                //println("Updated selected keys updated with: "+selected+" keys")
-                //if (selected>0) {
-
                     var keyIterator = this.serverSocketSelector.selectedKeys.iterator;
                     while (keyIterator.hasNext) {
 
@@ -259,6 +291,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
                                 // Prepare Network Context
                                 //----------------------------
                                 var networkContext = new TCPNetworkContext(clientSocket)
+                                networkContext.name = s"client@${networkContext.hashCode}"
                                 clientsContextsMap += (networkContext.toString -> networkContext)
 
                                 @->("server.accepted")
@@ -340,9 +373,6 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
                         keyIterator.remove
 
                     }
-                //}
-                // EOF if selected > 0
-
                 } catch {
 
                     case e : java.nio.channels.ClosedSelectorException => 
@@ -375,6 +405,7 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
 
             // Record Network Context
             this.clientNetworkContext = new TCPNetworkContext(this.clientSocket)
+            this.clientNetworkContext.name = s"server@${this.clientNetworkContext.hashCode}"
 
             logInfo(s"Client Started")
 
@@ -385,33 +416,50 @@ abstract class TCPConnector extends AbstractConnector with ListeningSupport {
             //------------------------
             var continue = true;
             while (continue && !this.stopThread)
-                this.clientSocket.read(readBuffer) match {
+                try {
+                    this.clientSocket.read(readBuffer) match {
 
-                    // Continue Reading
-                    //------------
-                    case readbytes if (readbytes > 0) => {
+                        // Continue Reading
+                        //------------
+                        case readbytes if (readbytes > 0) => {
 
-                        // Pass Datas to underlying protocol
-                        readBuffer.flip
+                            // Pass Datas to underlying protocol
+                            readBuffer.flip
 
-                        var passedBuffer = ByteBuffer.allocate(readbytes)
-                        passedBuffer.put(readBuffer)
-                        passedBuffer.rewind
+                            var passedBuffer = ByteBuffer.allocate(readbytes)
+                            passedBuffer.put(readBuffer)
+                            passedBuffer.rewind
 
-                        protocolReceiveData(passedBuffer,this.clientNetworkContext)
+                            protocolReceiveData(passedBuffer,this.clientNetworkContext)
 
 
-                        // Clear Buffer for next read
-                        readBuffer.clear();
+                            // Clear Buffer for next read
+                            readBuffer.clear();
+                        }
+
+                        // Close Client Connection
+                        //------------
+                        case readbytes if (readbytes < 0) => {
+                            this.clientSocket.close();
+                            continue = false
+                        }
                     }
 
-                    // Close Client Connection
-                    //------------
-                    case readbytes if (readbytes < 0) => {
-                        this.clientSocket.close();
+                } catch {
+
+                    // In case of I/O Exception, stop
+                    case e : java.io.IOException =>
                         continue = false
-                    }
+
+                    // Otherwise let live
+                    case e : Throwable =>
+                        continue = false
                 }
+
+            // EOF Data -> Clean
+            //------------------
+            this.clientNetworkContext = null
+            this.clientSocket = null
 
         }
     }
@@ -438,11 +486,23 @@ abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNe
 
     }
 
-    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+    def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext) : ByteBuffer  = {
 
+        // Send though protocol handler
+        //-------------------------
+        var sendBuffer = ProtocolHandler(context,protocolHandlerFactory).send(buffer)
 
-        ProtocolHandler(context,protocolHandlerFactory).send(buffer)
-
+        // Ensure next user can read from content
+        //---------
+       // println(s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
+        sendBuffer.remaining match {
+            case 0 => 
+        //        println("...so now fliping")
+                sendBuffer.flip.asInstanceOf[ByteBuffer]
+            case _ => 
+                sendBuffer
+        }
+        
 
     }
 
@@ -453,6 +513,11 @@ abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNe
 //---------------------
  class TCPNetworkContext(var socket : SocketChannel ) extends NetworkContext {
 
+    var name : String = null
 
+    override def toString : String = name match {
+        case null => super.toString
+        case _ => name
+    }
 
 }

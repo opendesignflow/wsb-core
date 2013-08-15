@@ -3,22 +3,28 @@
  */
 package com.idyria.osi.wsb.core.network.connectors.http
 
-import java.net.ServerSocket
-import java.net.Socket
-import scala.io.Source
+
+
+import com.idyria.osi.wsb.core.broker.MessageBroker
 import com.idyria.osi.wsb.core.message.HTTPMessage
 import com.idyria.osi.wsb.core.network.AbstractConnector
+import com.idyria.osi.wsb.core.network.NetworkContext
+
+import scala.io.Source
+
+import java.net.ServerSocket
+import java.net.Socket
+import java.nio._
 import javax.net.ServerSocketFactory
 import java.io.PrintStream
-import com.idyria.osi.wsb.core.broker.MessageBroker
 
-import java.nio._
+
 
 /**
  * @author rleys
  *
  */
-class HTTPConnector( var port : Int ) extends AbstractConnector {
+class HTTPConnector( var port : Int ) extends AbstractConnector[HTTPNetworkContext] {
 
   /**
    * Connection address
@@ -34,6 +40,8 @@ class HTTPConnector( var port : Int ) extends AbstractConnector {
 
 
   def send(buffer : ByteBuffer) = { }
+
+  def send(buffer : ByteBuffer,context: HTTPNetworkContext) = { }
 
   /**
    * Handles a client Socket
@@ -187,5 +195,9 @@ class HTTPConnector( var port : Int ) extends AbstractConnector {
 
   }
 
+
+}
+
+class HTTPNetworkContext extends NetworkContext {
 
 }

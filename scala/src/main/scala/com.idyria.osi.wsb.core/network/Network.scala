@@ -11,7 +11,7 @@ import com.idyria.osi.wsb.core._
  */
 class Network ( var engine : WSBEngine ) extends Lifecycle {
 
-  var connectors = Set[AbstractConnector]()
+  var connectors = Set[AbstractConnector[NetworkContext]]()
 
   // Engine Connection
   //-------------
@@ -24,7 +24,7 @@ class Network ( var engine : WSBEngine ) extends Lifecycle {
 
   // Connectors Management
   //--------------------
-  def addConnector ( connector : AbstractConnector) = {
+  def addConnector ( connector : AbstractConnector[NetworkContext]) = {
 
     connector.network = this
     connectors += connector
