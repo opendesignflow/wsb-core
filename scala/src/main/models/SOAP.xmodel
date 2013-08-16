@@ -1,0 +1,12 @@
+
+
+
+object SOAP extends ModelBuilder {
+
+
+    element "SOAP"{
+
+        println("This is that kind of studd")
+    }
+
+}
