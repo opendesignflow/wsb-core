@@ -4,7 +4,7 @@ import com.idyria.osi.ooxoo.core.buffers.structural._
 import com.idyria.osi.ooxoo.core.buffers.structural.io.sax._
 
 
-
+import com.idyria.osi.ooxoo.core.buffers.structural.io.sax._
 
 
 
@@ -15,38 +15,13 @@ import com.idyria.osi.ooxoo.core.buffers.structural.io.sax._
     The namespace is SOAP 1.2
 
 */
-@xelement(name="Envelope",ns="http://www.w3.org/2003/05/soap-envelope")
-class SOAPMessage extends ElementBuffer {
+class SOAPMessage extends Envelope {
 
-    // Elements
-    //--------------------
-    @xelement(name="Header",ns="http://www.w3.org/2003/05/soap-envelope")
-    class Header extends ElementBuffer {
-
-        @any
-        var content = AnyXList()
-
-
-    }
-
-    @xelement(name="Body",ns="http://www.w3.org/2003/05/soap-envelope")
-    class Body  extends ElementBuffer {
-
-        @any
-        var content = AnyXList()
-
-    }
+    // Initialize default Header and Body
+    //-------------------
+    this.header = new Header 
+    this.body = new Body 
     
-
-    // Structure
-    //----------------
-
-    @xelement(name="Header",ns="http://www.w3.org/2003/05/soap-envelope")
-    var header = new Header
-
-    @xelement(name="Body",ns="http://www.w3.org/2003/05/soap-envelope")
-    var body = new Body
-
 
     def toXMLString = {
 
