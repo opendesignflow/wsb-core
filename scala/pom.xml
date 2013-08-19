@@ -7,8 +7,34 @@
   <parent>
         <groupId>com.idyria.osi</groupId>
         <artifactId>superpom-scala</artifactId>
-        <version>2.10.1.r17</version>
+        <version>2.10.1.r18</version>
   </parent>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-ooxoo-plugin</artifactId>
+        <version>3.0.0-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>generate-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <configuration>
+              <useZincServer>true</useZincServer>
+              <addZincArgs>-no-color</addZincArgs>
+            </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 
   <!-- Repositories to find OSI packages -->
   <!-- ############################################## -->

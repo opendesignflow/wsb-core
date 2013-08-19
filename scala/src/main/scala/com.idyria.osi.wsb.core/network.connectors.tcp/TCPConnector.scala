@@ -204,12 +204,26 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
         if (this.direction == AbstractConnector.Direction.Server) {
 
             // Close Selector to stop operations on thread
-            this.serverSocketSelector.close
+            if (this.serverSocketSelector!=null && this.serverSocketSelector.isOpen ){
+                try {
+                    this.serverSocketSelector.close
+                } catch {
+                    case e : Throwable =>
+                }         
+            }
+            
 
         } else {
 
             this.stopThread = true
-            this.clientSocket.close
+
+            try {
+                this.clientSocket.close
+            } catch {
+                case e : Throwable =>
+            }
+
+            
         
         }
 
