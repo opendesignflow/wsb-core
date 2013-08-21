@@ -13,8 +13,9 @@ import com.idyria.osi.ooxoo.core.buffers.structural.io.sax._
     This is the TOP SOAPMessage class
 
     The namespace is SOAP 1.2
-
+    @xelement(name="Envelope",ns="")
 */
+
 class SOAPMessage extends Envelope {
 
     // Initialize default Header and Body

@@ -12,8 +12,8 @@ object SOAP extends ModelBuilder {
     namespace("env" -> "http://www.w3.org/2003/05/soap-envelope")
     parameter("scalaProducer.targetPackage" -> "com.idyria.osi.wsb.core.message.soap")
 
-    "env:Envelope" is {
 
+    "env:Envelope" is {
 
 
         "env:Header" is {
