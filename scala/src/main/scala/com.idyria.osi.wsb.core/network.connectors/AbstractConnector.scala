@@ -46,6 +46,10 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   */
   var started = new Semaphore(0);
 
+  /**
+    The message type used to send/receive requests with the application layer
+  */
+  var messageType = "unknown"
 
   // User Interface
   //----------------------

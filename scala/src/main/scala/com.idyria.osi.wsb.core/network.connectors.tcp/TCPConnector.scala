@@ -2,7 +2,8 @@ package com.idyria.osi.wsb.core.network.connectors.tcp
 
 import scala.collection.JavaConversions._
 
-import com.idyria.osi.wsb.core.message.HTTPMessage
+
+import com.idyria.osi.wsb.core.message._
 
 import com.idyria.osi.wsb.core.network.AbstractConnector
 import com.idyria.osi.wsb.core.network.protocols.ProtocolHandler
@@ -27,22 +28,25 @@ import java.nio._
 
 
 */
-abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
+abstract class TCPConnector( 
+
+       
+
+        ) extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
 
 
-
+    
 
     /**
      * Connection address
      */
     var address = "localhost"
 
-    /**
+
+     /**
         Connection Port
     */
     var port = 8083
-
-
 
     // Server Runtime Fields
     //-----------
@@ -128,7 +132,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
     }
 
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext)
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any]
 
     /**
         Calls send Data  through protocol implementation
@@ -345,6 +349,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                                         //------------
                                         case readbytes if (readbytes > 0) => {
 
+                                            @->("server.read.datas")
+
                                             // Pass Datas to underlying protocol
                                             readBuffer.flip
 
@@ -353,7 +359,32 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                                             passedBuffer.rewind
 
                                             //readBuffer.clear
-                                            protocolReceiveData(passedBuffer,networkContext)
+                                            protocolReceiveData(passedBuffer,networkContext) match {
+                                                case Some(something) =>
+
+                                                    // Get Message Factory
+                                                    Message(this.messageType) match {
+
+                                                        case Some(factory) =>
+
+                                                            // Create Message
+                                                            var message = factory(something)
+
+                                                            // Append context
+                                                            message.networkContext = networkContext
+
+                                                            // Send
+                                                            this.network ! message
+
+                                                        case None =>
+                                                            throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
+
+                                                    }
+
+                                                // Protocol not ready
+                                                case None =>
+
+                                            }
 
 
                                             // Clear Buffer for next read
@@ -363,12 +394,18 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                                         // Nothing to read
                                         //----------------
                                         case readbytes if (readbytes == 0) => {
+
+                                            @->("server.read.nodatas")
+                                            readBuffer.clear();
                                             continue = false
                                         }
 
                                         // Close Client Connection
                                         //------------
                                         case readbytes if (readbytes < 0) => {
+
+                                            @->("server.read.close")
+
                                             this.clientsContextsMap -= networkContext.toString
                                             socketChannel.close();
                                             continue = false
@@ -391,7 +428,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
                     case e : java.nio.channels.ClosedSelectorException => 
 
-                    case e : Throwable => 
+                    case e : Throwable => throw e
                        
                 }
 
@@ -486,17 +523,27 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     This class is an implementation of TCPConnector, handing out application protocol management to a Protocolhandler class
 
 */
-abstract class TCPProtocolHandlerConnector( var protocolHandlerFactory : ( TCPNetworkContext => ProtocolHandler[ByteBuffer]) ) extends TCPConnector {
+abstract class TCPProtocolHandlerConnector[T]( var protocolHandlerFactory : ( TCPNetworkContext => ProtocolHandler[T]) ) extends TCPConnector {
 
 
 
     // Protocol Implementation
     //----------------
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit = {
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any] = {
 
         // Receive through Protocol handler
         //---------------
-        ProtocolHandler(context,protocolHandlerFactory).receive(buffer)
+        var handler = ProtocolHandler(context,protocolHandlerFactory)
+        handler.receive(buffer) match {
+            case true => 
+
+                @->("protocol.receive.endOfData")
+                Option[Any](handler.availableDatas.last)
+
+            case false =>
+
+                None
+        }
 
     }
 

@@ -32,8 +32,8 @@ class StupidSocketTry extends FlatSpec with GivenWhenThen {
                 port=9898
 
                 // Dummy
-                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) = {
-
+                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) : Option[Any] = {
+                    None
                 }
 
                 // Dummy

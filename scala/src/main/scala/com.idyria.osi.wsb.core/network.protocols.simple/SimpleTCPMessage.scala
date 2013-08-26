@@ -20,7 +20,7 @@ import java.nio._
     Simple as hell :=)
 
 */
-class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector( ctx => new SimpleProtocolHandler(ctx) ) {
+class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer]( ctx => new SimpleProtocolHandler(ctx) ) {
 
 
 

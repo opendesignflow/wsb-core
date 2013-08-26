@@ -7,7 +7,7 @@
   <parent>
         <groupId>com.idyria.osi</groupId>
         <artifactId>superpom-scala</artifactId>
-        <version>2.10.1.r18</version>
+        <version>2.10.1.r21</version>
   </parent>
   <build>
     <plugins>
@@ -28,9 +28,20 @@
         <groupId>net.alchim31.maven</groupId>
             <artifactId>scala-maven-plugin</artifactId>
             <configuration>
-              <useZincServer>true</useZincServer>
               <addZincArgs>-no-color</addZincArgs>
             </configuration>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sourceDir>${basedir}/src/examples/scala</sourceDir>
+                </configuration>
+              </execution>
+            </executions>
       </plugin>
     </plugins>
   </build>

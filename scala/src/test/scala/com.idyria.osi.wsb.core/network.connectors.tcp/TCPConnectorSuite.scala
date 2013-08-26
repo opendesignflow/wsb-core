@@ -36,8 +36,8 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 port=9898
 
                 // Dummy
-                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) = {
-
+                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) : Option[Any] = {
+                    None
                 }
 
                 // Dummy
@@ -111,8 +111,8 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 cycleToStart
 
                 // Dummy
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) = {
-
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext): Option[Any] = {
+                    None
                 }
 
                 // Dummy
@@ -171,7 +171,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 // Receive until end of line
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any] = {
 
                     // on End of line, activate semaphore
                     var buff = Charset.forName("UTF-8").decode(buffer)
@@ -180,6 +180,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                         receivedLine = buff.toString
                     }
 
+                    None
 
                 }
 
@@ -239,10 +240,10 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 // Receive And echo back
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any]  = {
 
                     if (buffer.capacity==0)
-                        return
+                        return None
 
                     // Get Received line
                    // receivedLine = Charset.forName("UTF-8").decode(buffer).toString
@@ -253,6 +254,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     // Send back
                     protocolSendData(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes),context);
 
+                    None
 
                 }
 
@@ -301,7 +303,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 // Trigger received line
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any]  = {
 
                     // Get Received line
                     receivedLine = Charset.forName("UTF-8").decode(buffer).toString
@@ -309,7 +311,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     receivedResult.release
 
                    // println("Client Got some datas: "+receivedLine)
-
+                   None
 
                 }
 
@@ -364,7 +366,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 // Receive And echo back
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext): Option[Any] = {
 
                     // Get Received line
                     receivedLine = Charset.forName("UTF-8").decode(buffer).toString
@@ -372,7 +374,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     receivedResult.release
 
                     
-
+                    None
 
                 }
 
@@ -420,11 +422,11 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
                 // Trigger received line
                 var receivedLine = ""
-                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Unit  = {
+                def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any] = {
 
                     
                     if (buffer.capacity==0)
-                        return
+                        return None
 
                     // Get Received line
                    // receivedLine = Charset.forName("UTF-8").decode(buffer).toString
@@ -438,7 +440,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     this.send(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes))
 
                    // println("Client Got some datas: "+receivedLine)
-
+                    None
 
                 }
 

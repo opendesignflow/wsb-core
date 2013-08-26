@@ -1,9 +1,10 @@
 /**
  *
  */
-package com.idyria.osi.wsb.core.message
+package com.idyria.osi.wsb.core.message.http
 
 import com.idyria.osi.wsb.core.Logsource
+import com.idyria.osi.wsb.core.message._
 
 
 /**
@@ -12,9 +13,9 @@ import com.idyria.osi.wsb.core.Logsource
  */
 class HTTPMessage (
     
-    var operation : String,
-	var path : String,
-	var version : String
+      var operation : String,
+      var path : String,
+      var version : String
     
 		)  extends Message {
 
@@ -30,13 +31,19 @@ class HTTPMessage (
 	 */		
 	def addParameter(name : String, value:String) = parameters+=(name -> value)
 }
-object HTTPMessage extends Logsource {
+object HTTPMessage extends MessageFactory with Logsource {
   
+  def apply(data: Any) : Message = {
+
+      build(data.asInstanceOf[scala.collection.mutable.Buffer[String]])
+
+  }
+
   /**
    * Create HTTPMessage
    * - 1st line: GET/PUT...  /path/ HTTPVERSION
    */
-  def build(lines : List[String]): HTTPMessage = {
+  def build(lines : scala.collection.mutable.Buffer[String]): HTTPMessage = {
     
     // Prepare regexps
     //----------------------

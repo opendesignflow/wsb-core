@@ -3,10 +3,9 @@
  */
 package com.idyria.osi.wsb.core.network.connectors.http
 
-
+import com.idyria.osi.wsb.core.message.http._
 
 import com.idyria.osi.wsb.core.broker.MessageBroker
-import com.idyria.osi.wsb.core.message.HTTPMessage
 import com.idyria.osi.wsb.core.network.AbstractConnector
 import com.idyria.osi.wsb.core.network.NetworkContext
 
@@ -81,8 +80,8 @@ class HTTPConnector( var port : Int ) extends AbstractConnector[HTTPNetworkConte
 		                 //stop = true
 
 		                 // Parse Message
-		                 var message = HTTPMessage.build(lines.toList)
-		                 HTTPConnector.this.network ! message
+		                 //var message = HTTPMessage.build(lines.toList)
+		                 //HTTPConnector.this.network ! message
 
 		               } else {
 		                 lines += line
