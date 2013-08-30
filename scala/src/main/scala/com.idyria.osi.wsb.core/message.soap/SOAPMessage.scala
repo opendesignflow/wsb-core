@@ -23,7 +23,7 @@ class SOAPMessage extends Envelope {
     this.header = new Header 
     this.body = new Body 
     
-
+ 
     def toXMLString = {
 
         // Create StaxIO

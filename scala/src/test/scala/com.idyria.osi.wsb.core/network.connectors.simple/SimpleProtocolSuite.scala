@@ -11,6 +11,7 @@ import java.io._
 
 import java.util.concurrent._
 
+@Ignore
 class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
 
@@ -179,11 +180,11 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         expectResult(sendMessage)(new String(serverHandler.availableDatas.last.array()))
     }
 
-    messages.foreach {
+   /* messages.foreach {
         case (message , protocolMessage) => println(s"OO Message as input source: "+message)
-    }
+    }*/
 
-    messages.foreach {
+    /*messages.foreach {
        case (message , protocolMessage) =>
 
         info(s"Message as input source: "+message)
@@ -191,7 +192,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         test("Receive Standalone on list of message:") {
 
         }
-    }
+    }*/
 
 
    test("Client to server send") {
@@ -214,10 +215,12 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         Then("Start")
         //---------------------
         server.cycleToStart
-        server.started.acquire
+        assert(server.started.tryAcquire(1,TimeUnit.SECONDS) == true,"Server Started")
+
 
         client.cycleToStart
-        client.started.acquire
+        assert(client.started.tryAcquire(1,TimeUnit.SECONDS) == true,"Client Started")
+
 
         // (wait for connection)
         clientConnected.acquire

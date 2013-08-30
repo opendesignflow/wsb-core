@@ -6,12 +6,17 @@ package com.idyria.osi.wsb.core.message.http
 import com.idyria.osi.wsb.core.Logsource
 import com.idyria.osi.wsb.core.message._
 
+import java.nio._
 
 /**
+
+  Qualifier: s"http:$path:$operation"
+  Example: http:/index:GET
+
  * @author rleys
  *
  */
-class HTTPMessage (
+class HTTPRequest (
     
       var operation : String,
       var path : String,
@@ -22,7 +27,8 @@ class HTTPMessage (
 	protected var parameters =  scala.collection.mutable.Map[String,String]()
   
 	// Use Path as qualifier
-  
+  this.qualifier = s"http:$path:$operation"
+
 	/**
 	 * Record a parameter in internal parameter map
 	 * Parameters are read from or written as lines like:
@@ -30,10 +36,14 @@ class HTTPMessage (
 	 *  NAME: VALUE
 	 */		
 	def addParameter(name : String, value:String) = parameters+=(name -> value)
+
+  def toBytes = ByteBuffer.wrap(s"$operation $path HTTP/$version".getBytes)
 }
-object HTTPMessage extends MessageFactory with Logsource {
+
+
+object HTTPRequest extends MessageFactory with Logsource {
   
-  def apply(data: Any) : Message = {
+  def apply(data: Any) : HTTPRequest = {
 
       build(data.asInstanceOf[scala.collection.mutable.Buffer[String]])
 
@@ -43,7 +53,7 @@ object HTTPMessage extends MessageFactory with Logsource {
    * Create HTTPMessage
    * - 1st line: GET/PUT...  /path/ HTTPVERSION
    */
-  def build(lines : scala.collection.mutable.Buffer[String]): HTTPMessage = {
+  def build(lines : scala.collection.mutable.Buffer[String]): HTTPRequest = {
     
     // Prepare regexps
     //----------------------
@@ -54,10 +64,10 @@ object HTTPMessage extends MessageFactory with Logsource {
     // Parse First Line
     //-----------------------
     var firstLineRegexp(operation,path,version) = lines(0)
-    var message = new HTTPMessage(operation,path,version)
+    var message = new HTTPRequest(operation,path,version)
     
-    println("Got HTTP Message for path: "+message.path)
-    
+    println("Got HTTP Message for path: "+message.path+" and operation "+operation)
+     
     // Parse Parameters
     //-------------
     lines.drop(1).foreach {
@@ -83,4 +93,38 @@ object HTTPMessage extends MessageFactory with Logsource {
     
   }
   
+}
+
+class HTTPResponse (
+    
+      var contentType : String,
+      var content : String
+    
+    )  extends Message {
+
+  var code = 200
+
+  def toBytes : ByteBuffer = {
+
+ByteBuffer.wrap(s"""HTTP/1.1 $code
+Content-Type: $contentType
+Content-Length: ${content.getBytes.length}
+$content
+
+""".getBytes)
+
+
+  }
+
+}
+object HTTPResponse {
+
+  def apply(contentType: String, content:String) : HTTPResponse = {
+
+
+    new HTTPResponse(contentType,content)
+
+
+  }
+
 }

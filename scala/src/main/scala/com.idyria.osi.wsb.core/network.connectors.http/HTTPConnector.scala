@@ -1,202 +1,106 @@
-/**
- *
- */
 package com.idyria.osi.wsb.core.network.connectors.http
 
+import com.idyria.osi.wsb.core.network._
+import com.idyria.osi.wsb.core.network.connectors._
+import com.idyria.osi.wsb.core.network.connectors.tcp._
+import com.idyria.osi.wsb.core.network.protocols._
+
+import com.idyria.osi.wsb.core.message._
 import com.idyria.osi.wsb.core.message.http._
 
-import com.idyria.osi.wsb.core.broker.MessageBroker
-import com.idyria.osi.wsb.core.network.AbstractConnector
-import com.idyria.osi.wsb.core.network.NetworkContext
+import com.idyria.osi.tea.listeners.ListeningSupport
+
+import java.nio.channels._
+import java.nio._
+import java.io._
+
 
 import scala.io.Source
 
-import java.net.ServerSocket
-import java.net.Socket
-import java.nio._
-import javax.net.ServerSocketFactory
-import java.io.PrintStream
+class HTTPConnector( cport : Int) extends TCPProtocolHandlerConnector[scala.collection.mutable.ArrayBuffer[String]]( ctx => new HTTPProtocolHandler(ctx) ) {
 
+ 
+	this.port = cport
+	this.messageType = "http"
 
+	Message("http",HTTPRequest)
 
-/**
- * @author rleys
- *
- */
-class HTTPConnector( var port : Int ) extends AbstractConnector[HTTPNetworkContext] {
 
   /**
-   * Connection address
-   */
-  var address = "localhost"
-
-  var socket : ServerSocket = null
-
-  /**
-   * Maps a string to te client handler, for backpath matching
-   */
-  var clientSocketsMap =  scala.collection.mutable.Map[String,ClientHandler]()
-
-
-  def send(buffer : ByteBuffer) = { }
-
-  def send(buffer : ByteBuffer,context: HTTPNetworkContext) = { }
-
-  /**
-   * Handles a client Socket
-   *
-   * HTTP: Empty line define end of request.
-   * FIXME: The end of line may not come in one getLines call
-   *
-   */
-  class ClientHandler(var clientSocket : Socket) extends Thread {
-
-    this.setDaemon(true)
-
-    override def run = {
-
-      // Take Socket stream
-      var socketSource = Source.fromInputStream(clientSocket.getInputStream(), "UTF-8")
-
-      // Register in Socket Map
-      clientSocketsMap += (this.clientSocket.getRemoteSocketAddress().toString() -> this)
-
-      logInfo ("Starting Client Handler")
-
-      var stop = false
-      while(!stop) {
-
-        // Take Lines and create message
-        var lines = scala.collection.mutable.ArrayBuffer[String]()
-        var lastLine = false;
-        try {
-	        do {
-	           socketSource.getLines.foreach {
-	               line =>
-		               // If last line, create message and dispatch to handler
-		               if (line.equals("")) {
-		                 //lastLine = true
-		                 //writeMessage(null)
-		                 //stop = true
-
-		                 // Parse Message
-		                 //var message = HTTPMessage.build(lines.toList)
-		                 //HTTPConnector.this.network ! message
-
-		               } else {
-		                 lines += line
-		               }
-	           }
-
-
-	        } while(!lastLine)
-        } catch {
-
-          case e : Throwable => stop = true;
-        }
-        //var message = HTTPMessage.build(lines.toList)
-
-        // Send Message to handler
-
-        // Return Dummy Stuff
-
-
-      }
-
-    }
-
-    def writeMessage(message : HTTPMessage) = {
-
-      logInfo("Sending Dummy HTML")
-
-      // Prepare Writer
-      var printStream = new PrintStream(this.clientSocket.getOutputStream())
-
-      var page = s"""
-      <html>
-      	<head>
-
-      	</head>
-      	<body>
-      		<h1>Hello World!!</h1>
-      	</body>
-      </html>
-      """
-
-      printStream.println("HTTP/1.1 200")
-      printStream.println("Content-Type: text/html")
-      printStream.println("Content-Length: "+page.getBytes().length+"")
-      printStream.println(page)
-      printStream.println();
-      printStream.flush()
-      this.clientSocket.close()
-
-    }
+    After sending response data to a client, one must close the socket
+  */
+  override def send(buffer:ByteBuffer, context: TCPNetworkContext) = {
+    super.send(buffer,context)
+    context.socket.close 
 
   }
+}
+ 
+object HTTPConnector {
 
-
-  override def lInit = {
-
-    logInfo ("Creating Socket")
-
-    // Create Server Socket
-    this.socket = ServerSocketFactory.getDefault().createServerSocket(port)
-
-
-  }
-
-  override def run = {
-
-    logInfo("Starting HTTP Connector")
-
-    while(!this.stopThread) {
-
-	    // Listen
-	    //--------------
-
-	    // Accept Connections
-	    //---------------------------
-    	try {
-	    var clientSocket = this.socket.accept();
-	    if (clientSocket==null) {
-
-	      //-- Stop if connection broken
-	      this.stopThread = true
-
-	    } else {
-
-	      //-- Launch handler thread and loop
-	      logInfo("Handling Connection")
-	      var clientHandler = new ClientHandler(clientSocket)
-	      clientHandler.start();
-
-	    }
-	    } catch {
-	      case e : Throwable => {
-	        this.stopThread = true
-	      }
-	    }
-    }
-
-  }
-
-  def lStop = {
-
-    this.stopThread=true
-    try {
-    	this.socket.close()
-    } catch {
-      case e : Throwable => {
-
-      }
-    }
-
-  }
-
-
+	def apply(port: Int) : HTTPConnector = new HTTPConnector(port)
 }
 
-class HTTPNetworkContext extends NetworkContext {
+class HTTPProtocolHandler (var localContext : NetworkContext) extends ProtocolHandler[scala.collection.mutable.ArrayBuffer[String]](localContext) with ListeningSupport {
+
+	// Receive
+	//-----------------
+	var lastLine = false;
+	
+	// Take Lines and create message
+    var lines = scala.collection.mutable.ArrayBuffer[String]()
+
+	// Send
+	//---------------------
+ 
+	/**
+		REceive some HTTP
+	*/
+	def receive(buffer : ByteBuffer) : Boolean = {
+
+		@->("http.connector.receive",buffer)
+		println("Got HTTP Datas: "+new String(buffer.array))
+    	
+    	// Use SOurce to read from buffer
+    	//--------------------
+    	var bytesSource = Source.fromInputStream(new ByteArrayInputStream(buffer.array))
+
+       bytesSource.getLines.foreach {
+           line =>
+               // If last line, create message and dispatch to handler
+               if (line.equals("")) {
+                 lastLine = true
+                 //writeMessage(null)
+                 //stop = true
+
+                 // Parse Message
+                 //var message = HTTPMessage.build(lines.toList)
+                 //HTTPConnector.this.network ! message
+
+                 println("---> Reached last line: ")
+
+               } else {
+                 lines += line
+               }
+       }
+
+       // Reset if at the end of Request
+       lastLine match {
+       		case true => 
+       			lastLine = false
+
+       			this.availableDatas += lines 
+       			this.lines = scala.collection.mutable.ArrayBuffer[String]()
+
+       			true
+       		case false => false
+       }
+
+
+	}
+
+	def send (buffer: ByteBuffer) :  ByteBuffer  = {
+		buffer
+	}
 
 }

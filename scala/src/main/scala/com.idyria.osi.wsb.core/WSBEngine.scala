@@ -56,6 +56,8 @@ class WSBEngine  extends Lifecycle {
   def lStop = {
 
     Set(network,broker).foreach(_.cycleToStop)
+
+    println("Engine Stopped")
   }
 
   /**

@@ -5,11 +5,12 @@ package com.idyria.osi.wsb.core.message
 
 import com.idyria.osi.wsb.core.network._
 
+import java.nio._
 /**
  * @author rleys
  *
  */
-class Message {
+abstract class Message {
 
   /**
    * Qualifier used in tree processing to filter out subtrees
@@ -18,6 +19,12 @@ class Message {
 
   var networkContext : NetworkContext = null
   
+
+  /**
+    To be implemented by messages for connectors to retrieve bytes for this message
+  */
+  def toBytes : ByteBuffer
+
 }
 
 trait MessageFactory {
@@ -43,3 +50,4 @@ object Message {
 	}
 
 }
+

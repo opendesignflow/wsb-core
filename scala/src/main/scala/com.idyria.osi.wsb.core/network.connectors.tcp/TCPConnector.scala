@@ -84,11 +84,9 @@ abstract class TCPConnector(
     var clientNetworkContext : TCPNetworkContext = null
 
 
-
-    // Protocol Implementation
-    //----------------
-
-    /**
+    // Send Interface
+    //------------------------
+      /**
         Send through protocol
 
         @throw RuntimeExeception if no client context is available
@@ -104,16 +102,6 @@ abstract class TCPConnector(
         var resBuffer = protocolSendData(buffer,this.clientNetworkContext)
 
         //-- Send
-
-       /*println(s"""
-            Sending from client to server on socket:
-                 ${resBuffer.remaining} bytes
-                 limit: ${resBuffer.limit}
-                 position: ${resBuffer.position}
-                 capacity: ${resBuffer.capacity} bytes
-            """)
-    */
-
         this.clientNetworkContext.socket.write(resBuffer)
 
 
@@ -124,6 +112,8 @@ abstract class TCPConnector(
     */
     def send(buffer:ByteBuffer, context: TCPNetworkContext) = {
 
+        println("Sending byte buffer to context")
+
         //-- Pass to protocol implementation
         var resBuffer = protocolSendData(buffer,context)
 
@@ -131,6 +121,57 @@ abstract class TCPConnector(
         context.socket.write(resBuffer)
 
     }
+
+    /** FIXME
+
+        Send a message:
+
+            - Send back to already existing connection
+            - Send through new opening connection
+    */
+    def send(msg: Message) : Boolean = {
+
+        (this.clientNetworkContext,canHandle(msg)) match  {
+
+            // Send back to client
+            case (null,true) => 
+
+                this.send(msg.toBytes,msg.networkContext.asInstanceOf[TCPNetworkContext])
+                true
+
+             // No server connection and cannot handle message
+            case (null,false) => false
+
+            // Send through server context
+            case (serverContext,false) => 
+
+                this.send(msg.toBytes)
+                true
+
+            // Both server connection and a client context can handle the message...
+            case (serverContext,true) => throw new RuntimeException(s"""Both server connection and a client context can handle the message ${msg.qualifier}""")
+
+        }
+
+    }
+    /**
+        This connector can handle the message, if the network context is of the right type, and available
+    */
+    def canHandle(message: Message) : Boolean = {
+
+        message.networkContext match {
+
+            case ctx if(ctx==null) => false
+            case ctx =>  clientsContextsMap.contains(ctx.toString)
+        }
+       
+
+    }
+
+    // Protocol Implementation
+    //----------------
+
+  
 
     def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any]
 
@@ -309,7 +350,7 @@ abstract class TCPConnector(
                                 // Prepare Network Context
                                 //----------------------------
                                 var networkContext = new TCPNetworkContext(clientSocket)
-                                networkContext.name = s"client@${networkContext.hashCode}"
+                                networkContext.qualifier = s"client@${networkContext.hashCode}"
                                 clientsContextsMap += (networkContext.toString -> networkContext)
 
                                 @->("server.accepted")
@@ -456,7 +497,7 @@ abstract class TCPConnector(
 
             // Record Network Context
             this.clientNetworkContext = new TCPNetworkContext(this.clientSocket)
-            this.clientNetworkContext.name = s"server@${this.clientNetworkContext.hashCode}"
+            this.clientNetworkContext.qualifier = s"server@${this.clientNetworkContext.hashCode}"
 
             logInfo(s"Client Started")
 
@@ -574,11 +615,6 @@ abstract class TCPProtocolHandlerConnector[T]( var protocolHandlerFactory : ( TC
 //---------------------
  class TCPNetworkContext(var socket : SocketChannel ) extends NetworkContext {
 
-    var name : String = null
-
-    override def toString : String = name match {
-        case null => super.toString
-        case _ => name
-    }
+    
 
 }

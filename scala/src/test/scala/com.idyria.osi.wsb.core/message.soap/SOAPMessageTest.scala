@@ -81,7 +81,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
         //---------------------
         var message = SOAPMessage()
 
-
+ 
         // Add a dummy test header
         //-------------------
         var testHeader = new TestHeaderNS1
@@ -142,6 +142,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
         var message = SOAPMessage()
         message - StAXIOBuffer(messageWithHeadersComplexer)
         message.lastBuffer.streamIn
+
 
         // Check  elements have been parsed
         //--------------------------

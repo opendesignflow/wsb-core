@@ -20,7 +20,7 @@ object HTTPExample extends App {
 	//-----------------------
 	var engine = new WSBEngine()
 
-	var connector = HTTPConnector2(57300)
+	var connector = HTTPConnector(57300)
 
 	connector.on("server.started") {
 
@@ -52,7 +52,7 @@ object HTTPExample extends App {
 	// Message Catcher
 	//------------------------
 	engine.localBus.registerClosure {
-		msg : HTTPMessage => 
+		msg : HTTPRequest => 
 			println("Received AIB Message")
 
 			  // Prepare Write

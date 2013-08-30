@@ -6,6 +6,8 @@ package com.idyria.osi.wsb.core.network
 import com.idyria.osi.wsb.core.Lifecycle
 import com.idyria.osi.wsb.core.Logsource
 
+import com.idyria.osi.wsb.core.message._
+
 import java.util.concurrent._
 
 import java.nio._
@@ -51,7 +53,7 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   */
   var messageType = "unknown"
 
-  // User Interface
+  // User Send Interface
   //----------------------
 
   /**
@@ -64,6 +66,17 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
     Typically used by a server side that can handle multiple clients
   */
   def send(data:ByteBuffer, context: NT) 
+
+  /**
+    Returns true if message has been sent
+  */
+  def send(msg: Message) : Boolean
+
+  /**
+    Return true if the connector could send the message
+    Returns false otherwise
+  */
+  def canHandle(msg: Message) : Boolean 
 
   // Lifecycle
   //-----------------
