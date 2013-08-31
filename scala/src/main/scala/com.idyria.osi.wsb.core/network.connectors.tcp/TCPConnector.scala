@@ -173,7 +173,7 @@ abstract class TCPConnector(
 
   
 
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any]
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Iterable[Any]]
 
     /**
         Calls send Data  through protocol implementation
@@ -365,7 +365,7 @@ abstract class TCPConnector(
                                 //-- Register NetworkContext with key
                                 clientSocketKey.attach(networkContext)
 
-
+                                keyIterator.remove
 
                             }
 
@@ -380,89 +380,107 @@ abstract class TCPConnector(
                                 var networkContext = key.attachment().asInstanceOf[TCPNetworkContext]
                                 var socketChannel = networkContext.socket
 
-                                // Read Until 0, or < 0 closes the channel
-                                //----------
-                                var continue = true;
-                                while (continue)
-                                    socketChannel.read(readBuffer) match {
+                                try {
+                                    // Read Until 0, or < 0 closes the channel
+                                    //----------
+                                    var continue = true;
+                                    while (continue)
+                                        socketChannel.read(readBuffer) match {
 
-                                        // Continue Reading
-                                        //------------
-                                        case readbytes if (readbytes > 0) => {
+                                            // Continue Reading
+                                            //------------
+                                            case readbytes if (readbytes > 0) => {
 
-                                            @->("server.read.datas")
+                                                @->("server.read.datas")
 
-                                            // Pass Datas to underlying protocol
-                                            readBuffer.flip
+                                                // Pass Datas to underlying protocol
+                                                readBuffer.flip
 
-                                            var passedBuffer = ByteBuffer.allocate(readbytes)
-                                            passedBuffer.put(readBuffer)
-                                            passedBuffer.rewind
+                                                var passedBuffer = ByteBuffer.allocate(readbytes)
+                                                passedBuffer.put(readBuffer)
+                                                passedBuffer.flip
 
-                                            //readBuffer.clear
-                                            protocolReceiveData(passedBuffer,networkContext) match {
-                                                case Some(something) =>
+                                                //readBuffer.clear
+                                                protocolReceiveData(passedBuffer,networkContext) match {
+                                                    case Some(messages) =>
 
-                                                    // Get Message Factory
-                                                    Message(this.messageType) match {
+                                                        // Get Message Factory
+                                                        Message(this.messageType) match {
 
-                                                        case Some(factory) =>
+                                                            case Some(factory) =>
 
-                                                            // Create Message
-                                                            var message = factory(something)
+                                                                 messages.foreach {
+                                                                    m => 
+                                                                        // Create Message
+                                                                        var message = factory(m)
 
-                                                            // Append context
-                                                            message.networkContext = networkContext
+                                                                        // Append context
+                                                                        message.networkContext = networkContext
 
-                                                            // Send
-                                                            this.network ! message
+                                                                        // Send
+                                                                        this.network ! message
+                                                                 }
+                                                                
 
-                                                        case None =>
-                                                            throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
+                                                            case None =>
+                                                                throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
 
-                                                    }
+                                                        }
 
-                                                // Protocol not ready
-                                                case None =>
+                                                    // Protocol not ready
+                                                    case None =>
 
+                                                }
+
+
+                                                // Clear Buffer for next read
+                                                readBuffer.clear();
                                             }
 
+                                            // Nothing to read
+                                            //----------------
+                                            case readbytes if (readbytes == 0) => {
 
-                                            // Clear Buffer for next read
-                                            readBuffer.clear();
+                                                @->("server.read.nodatas")
+                                                readBuffer.clear();
+                                                continue = false
+                                            }
+
+                                            // Close Client Connection
+                                            //------------
+                                            case readbytes if (readbytes < 0) => {
+
+                                                @->("server.read.close")
+
+                                                this.clientsContextsMap -= networkContext.toString
+                                                socketChannel.close();
+                                                continue = false
+                                            }
                                         }
+                                } catch {
 
-                                        // Nothing to read
-                                        //----------------
-                                        case readbytes if (readbytes == 0) => {
+                                    // IN case of IO error, forget about this connection
+                                    case e : java.io.IOException => 
 
-                                            @->("server.read.nodatas")
-                                            readBuffer.clear();
-                                            continue = false
-                                        }
+                                        this.clientsContextsMap -= networkContext.toString
 
-                                        // Close Client Connection
-                                        //------------
-                                        case readbytes if (readbytes < 0) => {
+                                    case e : Throwable => throw e
 
-                                            @->("server.read.close")
+                                } finally {
 
-                                            this.clientsContextsMap -= networkContext.toString
-                                            socketChannel.close();
-                                            continue = false
-                                        }
-                                    }
-
+                                    keyIterator.remove
+                                }
                             }
 
                             // Fall back
                             //----------------
                             case key => {
-
+                                keyIterator.remove
                             }
 
                         }
-                        keyIterator.remove
+                        // EOF Key matched
+                        
 
                     }
                 } catch {
@@ -570,18 +588,26 @@ abstract class TCPProtocolHandlerConnector[T]( var protocolHandlerFactory : ( TC
 
     // Protocol Implementation
     //----------------
-    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Any] = {
+    def protocolReceiveData(buffer : ByteBuffer,context: TCPNetworkContext) : Option[Iterable[Any]] = {
 
         // Receive through Protocol handler
         //---------------
         var handler = ProtocolHandler(context,protocolHandlerFactory)
-        handler.receive(buffer) match {
-            case true => 
+        handler.receive(buffer)
+        handler.availableDatas.size match {
+            case size if(size>0) => 
+
+                var res = List[T]()
+                handler.availableDatas.foreach {
+                    data => res = res :+ data
+                }
 
                 @->("protocol.receive.endOfData")
-                Option[Any](handler.availableDatas.last)
+                handler.availableDatas.clear
 
-            case false =>
+                Option(res)
+
+            case _ =>
 
                 None
         }
