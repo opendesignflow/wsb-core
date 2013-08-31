@@ -59,7 +59,7 @@ class HTTPProtocolHandler (var localContext : NetworkContext) extends ProtocolHa
 	def receive(buffer : ByteBuffer) : Boolean = {
 
 		@->("http.connector.receive",buffer)
-		println("Got HTTP Datas: "+new String(buffer.array))
+		//println("Got HTTP Datas: "+new String(buffer.array))
     	
     	// Use SOurce to read from buffer
     	//--------------------
@@ -67,6 +67,9 @@ class HTTPProtocolHandler (var localContext : NetworkContext) extends ProtocolHa
 
        bytesSource.getLines.foreach {
            line =>
+
+              println(s"HTTP Line: $line")
+              
                // If last line, create message and dispatch to handler
                if (line.equals("")) {
                  lastLine = true

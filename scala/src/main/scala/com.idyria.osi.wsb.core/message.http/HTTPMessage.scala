@@ -76,10 +76,10 @@ object HTTPRequest extends MessageFactory with Logsource {
         println(s"Param: $line")
         
         try {
-        var parameterLineRegexp(name,value) = line
-        message.addParameter(name, value)
+          var parameterLineRegexp(name,value) = line
+          message.addParameter(name, value)
         } catch {
-          case e : Throwable => logInfo(s"Could not parse HTTP parameter $line")
+          case e : Throwable => println(s"Could not parse HTTP parameter $line")
         }
     }
     
