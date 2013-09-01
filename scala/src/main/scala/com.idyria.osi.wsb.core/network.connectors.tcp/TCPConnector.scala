@@ -118,7 +118,9 @@ abstract class TCPConnector(
         var resBuffer = protocolSendData(buffer,context)
 
         //-- Send
-        context.socket.write(resBuffer)
+        while(resBuffer.remaining!=0)
+        	context.socket.write(resBuffer)
+       
 
     }
 
