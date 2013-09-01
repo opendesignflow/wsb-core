@@ -398,9 +398,11 @@ abstract class TCPConnector(
                                                 // Pass Datas to underlying protocol
                                                 readBuffer.flip
 
-                                                var passedBuffer = ByteBuffer.allocate(readbytes)
+                                                /*var passedBuffer = ByteBuffer.allocate(readbytes)
                                                 passedBuffer.put(readBuffer)
-                                                passedBuffer.flip
+                                                passedBuffer.flip*/
+                                                //println("-> Din")
+                                                var passedBuffer = readBuffer
 
                                                 //readBuffer.clear
                                                 protocolReceiveData(passedBuffer,networkContext) match {
@@ -436,7 +438,8 @@ abstract class TCPConnector(
 
 
                                                 // Clear Buffer for next read
-                                                readBuffer.clear();
+                                                readBuffer.flip()
+                                                //readBuffer.clear();
                                             }
 
                                             // Nothing to read
