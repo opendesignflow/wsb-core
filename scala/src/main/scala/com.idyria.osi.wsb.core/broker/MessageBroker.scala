@@ -7,7 +7,7 @@ import com.idyria.osi.wsb.core.message.Message
 
 class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
 
-  
+   
 
   // Brokering Tree
   //---------------------

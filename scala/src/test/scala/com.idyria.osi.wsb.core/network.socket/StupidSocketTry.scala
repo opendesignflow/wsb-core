@@ -25,14 +25,14 @@ class StupidSocketTry extends FlatSpec with GivenWhenThen {
 
     "TCPConnector start and close" should "let same port resusable" in {
 
-
+ 
          Given("A started connector")
             //---------------------
             var connector = new TCPConnector() {
                 port=9898
 
                 // Dummy
-                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) : Option[Any] = {
+                def protocolReceiveData( buffer : ByteBuffer, context: TCPNetworkContext) : Option[Iterable[Any]] = {
                     None
                 }
 

@@ -43,7 +43,7 @@ trait Intermediary  extends ElementBuffer {
   //---------------
   final def down( message: Message) : Unit = {
 
-    println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
 
     // Ignore message if pattern does not apply
     //--------------
@@ -52,7 +52,7 @@ trait Intermediary  extends ElementBuffer {
       //-- Proceed locally and to descendants
       case Some(matchResult) => 
           
-          println(s"---> Accepted")
+          println(s"---> Accepted $filter with message: ${message.qualifier}")
 
           // Local closure
           downClosure(message)
@@ -63,7 +63,7 @@ trait Intermediary  extends ElementBuffer {
       //-- Ignore
       case None => 
  
-          println(s"---> Rejected")
+          //println(s"---> Rejected")
 
     }
 
@@ -71,7 +71,7 @@ trait Intermediary  extends ElementBuffer {
 
   final def up(message: Message) : Unit = {
 
-    println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
 
     // Up Closure
     upClosure(message)
@@ -90,7 +90,13 @@ trait Intermediary  extends ElementBuffer {
   */
   def response(responseMessage: Message,sourceMessage: Message) : Unit = {
 
+    // Copy context
     responseMessage.networkContext = sourceMessage.networkContext
+
+    // Set related message
+    responseMessage.relatedMessage = sourceMessage
+    
+    // Up :)
     up(responseMessage)
 
   }
