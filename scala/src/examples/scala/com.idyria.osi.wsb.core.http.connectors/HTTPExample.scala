@@ -1,7 +1,7 @@
 package com.idyria.osi.wsb.core.network.connectors.http
-
+ 
 //import com.idyria.osi.wsb.core.network.connectors.http._
-
+/*
 import com.idyria.osi.wsb.core.message.http._
 import com.idyria.osi.wsb.core.network.connectors.tcp._
 
@@ -94,3 +94,4 @@ object HTTPExample extends App {
 	println("End of example")
 
 }
+*/

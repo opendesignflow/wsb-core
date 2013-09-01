@@ -90,7 +90,13 @@ trait Intermediary  extends ElementBuffer {
   */
   def response(responseMessage: Message,sourceMessage: Message) : Unit = {
 
+    // Copy context
     responseMessage.networkContext = sourceMessage.networkContext
+
+    // Set related message
+    responseMessage.relatedMessage = sourceMessage
+    
+    // Up :)
     up(responseMessage)
 
   }

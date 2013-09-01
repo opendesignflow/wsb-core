@@ -18,7 +18,11 @@ abstract class Message {
   var qualifier = ""
 
   var networkContext : NetworkContext = null
-  
+
+    /**
+        If for example, this message is a response to another one, this is the request message
+    */
+    var relatedMessage : Message = null
 
   /**
     To be implemented by messages for connectors to retrieve bytes for this message
