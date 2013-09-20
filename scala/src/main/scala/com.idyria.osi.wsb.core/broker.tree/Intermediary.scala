@@ -10,66 +10,71 @@ import com.idyria.osi.ooxoo.core.buffers.structural.XList
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.ooxoo.core.buffers.structural.xattribute
 import com.idyria.osi.ooxoo.core.buffers.structural.xelement
-
+import com.idyria.osi.ooxoo.core.buffers.datatypes._
 
 /**
  * @author rleys
  *
  */
-trait Intermediary  extends ElementBuffer {
+trait Intermediary extends ElementBuffer {
+
+  /**
+   * A Name for user/api to formally identify the intermediary
+   */
+  @xattribute
+  var name: XSDStringBuffer = ""
 
   /**
    * Filter is used by Broker to determine if a message should go through this intermediary.
    */
   @xattribute
-  var filter : Regex = """.*""".r
+  var filter: Regex = """.*""".r
 
   @xelement
-  var intermediaries : XList[Intermediary] = XList[Intermediary] {  new Intermediary{} }
+  var intermediaries: XList[Intermediary] = XList[Intermediary] { new Intermediary {} }
 
   /**
-    A parent Intermediary if defined, mainly for up operation
-  */
-  var parentIntermediary : Intermediary = null
+   * A parent Intermediary if defined, mainly for up operation
+   */
+  var parentIntermediary: Intermediary = null
 
   // Up/ Down closures for user processing
   //---------------
-  var downClosure : ( Message => Unit) = { m =>}
+  var downClosure: (Message => Unit) = { m => }
 
-  var upClosure : ( Message => Unit) = { m =>}
- 
+  var upClosure: (Message => Unit) = { m => }
 
   // Up/Down runtime
   //---------------
-  final def down( message: Message) : Unit = {
+  final def down(message: Message): Unit = {
 
     //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
 
     // Ignore message if pattern does not apply
     //--------------
     filter.findFirstMatchIn(message.qualifier) match {
-      
+
       //-- Proceed locally and to descendants
-      case Some(matchResult) => 
-          
-          println(s"---> Accepted $filter with message: ${message.qualifier}")
+      case Some(matchResult) =>
 
-          // Local closure
-          downClosure(message)
+        println(s"---> Accepted $filter with message: ${message.qualifier}")
 
-          // Pass to children
-          this.intermediaries.foreach(i => i.down(message))
+        // Local closure
+        downClosure(message)
+
+        // Pass to children
+        this.intermediaries.foreach(i => i.down(message))
 
       //-- Ignore
-      case None => 
- 
-          //println(s"---> Rejected")
+      case None =>
+
+      //println(s"---> Rejected")
 
     }
 
   }
 
-  final def up(message: Message) : Unit = {
+  final def up(message: Message): Unit = {
 
     //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
 
@@ -77,25 +82,25 @@ trait Intermediary  extends ElementBuffer {
     upClosure(message)
 
     // Pass to parent if possible
-    if (this.parentIntermediary!=null) {
+    if (this.parentIntermediary != null) {
 
-        this.parentIntermediary.up(message)
+      this.parentIntermediary.up(message)
 
     }
 
   }
 
   /**
-    Sends up a message as response to another one
-  */
-  def response(responseMessage: Message,sourceMessage: Message) : Unit = {
+   * Sends up a message as response to another one
+   */
+  def response(responseMessage: Message, sourceMessage: Message): Unit = {
 
     // Copy context
     responseMessage.networkContext = sourceMessage.networkContext
 
     // Set related message
     responseMessage.relatedMessage = sourceMessage
-    
+
     // Up :)
     up(responseMessage)
 
@@ -103,16 +108,15 @@ trait Intermediary  extends ElementBuffer {
 
   def intermediaryTest = println("Hi!")
 
-
   // Language
   //-------------------
 
   /**
-    Add an intermediary to this current intermediary
-  */
+   * Add an intermediary to this current intermediary
+   */
   def <=(intermediary: Intermediary) = {
 
-    intermediaries+=intermediary
+    intermediaries += intermediary
     intermediary.parentIntermediary = this
 
   }
@@ -120,7 +124,5 @@ trait Intermediary  extends ElementBuffer {
 }
 
 object Intermediary {
-
-
 
 }
