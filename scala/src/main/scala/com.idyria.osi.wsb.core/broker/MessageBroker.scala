@@ -4,11 +4,11 @@ import com.idyria.osi.wsb.core._
 import com.idyria.osi.wsb.core.broker.tree._
 import com.idyria.osi.wsb.core.message.Message
 
-
+  
 class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
 
    
-
+ 
   // Brokering Tree
   //---------------------
 
@@ -30,7 +30,7 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
 
   }
 
- 
+   
   val messageReceiveClosure = {
 
       msg : Message => 

@@ -8,7 +8,7 @@ package com.idyria.osi.wsb.core.broker.tree
  *
  */
 class BrokeringTree extends Intermediary {
- 
+  
     
 
 }

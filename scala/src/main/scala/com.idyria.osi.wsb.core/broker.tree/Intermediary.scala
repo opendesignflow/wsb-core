@@ -40,9 +40,10 @@ trait Intermediary extends ElementBuffer {
 
   // Up/ Down closures for user processing
   //---------------
-  var downClosure: (Message => Unit) = { m => }
+  var downClosure: (Message => Unit) = null
 
-  var upClosure: (Message => Unit) = { m => }
+  
+  var upClosure: (Message => Unit) = null
 
   // Up/Down runtime
   //---------------
@@ -60,11 +61,46 @@ trait Intermediary extends ElementBuffer {
         println(s"---> Accepted $filter with message: ${message.qualifier}")
 
         // Local closure
-        downClosure(message)
-
-        // Pass to children
-        this.intermediaries.foreach(i => i.down(message))
-
+        //-------------
+        downClosure match {
+          case null => 
+          case closure => 
+            
+            try {
+    
+            	closure(message)
+          
+            } catch {
+              case e : ResponseException => 
+                
+                // Copy context
+			    e.responseMessage.networkContext = message.networkContext
+			
+			    // Set related message
+			    e.responseMessage.relatedMessage = message
+			
+			    // Up :)
+			    up(e.responseMessage)
+			    
+			    throw e
+                
+              case e : Throwable => 
+            } finally {
+            	
+            	
+            }
+        }
+        
+        // Pass to children if closure did not throw anything out
+        try {
+	    	this.intermediaries.foreach{
+	    	  i => 
+	    	    i.down(message)
+	    	}
+    	} catch {
+	      case e : Throwable => 
+	    }
+    	
       //-- Ignore
       case None =>
 
@@ -79,7 +115,10 @@ trait Intermediary extends ElementBuffer {
     //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
 
     // Up Closure
-    upClosure(message)
+    upClosure match {
+      case null => 
+      case closure => closure(message)
+    }
 
     // Pass to parent if possible
     if (this.parentIntermediary != null) {
@@ -95,16 +134,15 @@ trait Intermediary extends ElementBuffer {
    */
   def response(responseMessage: Message, sourceMessage: Message): Unit = {
 
-    // Copy context
-    responseMessage.networkContext = sourceMessage.networkContext
-
-    // Set related message
-    responseMessage.relatedMessage = sourceMessage
-
-    // Up :)
-    up(responseMessage)
-
+    throw new ResponseException(responseMessage)
+   
   }
+  def response(responseMessage: Message): Unit = {
+
+    throw new ResponseException(responseMessage)
+   
+  }
+
 
   def intermediaryTest = println("Hi!")
 
@@ -113,14 +151,21 @@ trait Intermediary extends ElementBuffer {
 
   /**
    * Add an intermediary to this current intermediary
+   * 
+   * @return The added intermediary for nicer api usage
    */
-  def <=(intermediary: Intermediary) = {
+  def <=(intermediary: Intermediary) : Intermediary = {
 
     intermediaries += intermediary
     intermediary.parentIntermediary = this
 
+    intermediary
   }
 
+}
+
+class ResponseException(var responseMessage : Message) extends Exception {
+  
 }
 
 object Intermediary {
