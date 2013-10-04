@@ -29,5 +29,11 @@ object SOAP extends ModelBuilder {
         }
 
     }
+    
+    "env:Fault" is {
+        
+        "Code" ofType "string"
+        "Message" ofType "string"
+    }
 
 }

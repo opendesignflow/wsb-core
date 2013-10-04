@@ -4,13 +4,14 @@
 package com.idyria.osi.wsb.core.message
 
 import com.idyria.osi.wsb.core.network._
-
 import java.nio._
+import com.idyria.osi.ooxoo.core.buffers.structural.xelement_base
+import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 /**
  * @author rleys
  *
  */
-abstract class Message {
+trait Message {
 
   /**
    * Qualifier used in tree processing to filter out subtrees
@@ -94,6 +95,27 @@ object Message {
 
     messageFactories = messageFactories + (messageType -> factory)
 
+  }
+  
+  object Qualifier {
+    
+    /**
+     * Return a qualifier in the form of {ns}:ElementName from provided ElementBuffer
+     */
+    def apply[T<:ElementBuffer](elt: T) : String = apply(elt.getClass())
+    
+    def apply[T<:ElementBuffer](elt: Class[T]) : String = {
+      
+      xelement_base(elt) match {
+        case null => ""
+          
+        case elt if(elt.ns!=null && elt.ns.length()>0) => s"{${elt.ns}}:${elt.name}"
+
+        case elt => s"${elt.name}"
+        
+      }
+      
+    }
   }
 
 }

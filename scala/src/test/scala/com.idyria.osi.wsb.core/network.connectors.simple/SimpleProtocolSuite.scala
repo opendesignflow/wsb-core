@@ -1,15 +1,13 @@
-package com.idyria.osi.wsb.core.network.connectors.simple
+package com.idyria.osi.wsb.core.network.protocols.simple
 
 
 import org.scalatest._
 import com.idyria.osi.wsb.core.network._
 import com.idyria.osi.wsb.core.network.protocols._
-
 import java.nio._
 import java.io._
-
-
 import java.util.concurrent._
+import com.idyria.osi.wsb.core.network.NetworkContext
 
 @Ignore
 class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {

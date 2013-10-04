@@ -5,23 +5,33 @@ package com.idyria.osi.wsb.core.message.soap
 
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
-
 import java.util.concurrent._
-
 import java.net._
-
 import org.scalatest._
 import java.net.URLClassLoader
 import java.net.URL
-
 import java.io._
 import java.nio._
 import java.nio.charset._
 import java.nio.channels._
-
-
 import com.idyria.osi.ooxoo.core.buffers.structural._
 import com.idyria.osi.ooxoo.core.buffers.structural.io.sax._
+import com.idyria.osi.wsb.lib.soap.Action
+import com.idyria.osi.ooxoo.core.buffers.datatypes.XSDStringBuffer
+
+
+@xelement(name="TestBody")
+class TestBody extends ElementBuffer {
+  
+  @xelement
+  var testBodySub : TestBodySub = null
+  
+}
+
+@xelement(name="TestBodySub")
+class TestBodySub extends XSDStringBuffer {
+  
+}
 
 class SOAPMessageTest extends FunSuite with GivenWhenThen {
 
@@ -123,7 +133,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
     <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
         <env:Header>
             <TestHeader name="hihi"></TestHeader>
-            <TestHeader2></TestHeader2>
+            <ns1:TestHeader2 xmlns:ns1="tt"></ns1:TestHeader2>
             <TestHeader2></TestHeader2>
         </env:Header>
         <env:Body>
@@ -167,6 +177,44 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
         expectResult("name")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].name)
         expectResult("hihi")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].data)
 
+    }
+    
+    
+    
+    
+    var realMessage = """<?xml version="1.0" ?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Body>
+    		<TestBody>
+    			<TestBodySub>Test</TestBodySub>
+    		</TestBody>
+    	</env:Body>
+      <env:Header>
+    		<ns1:Action xmlns:ns1="http://schemas.xmlsoap.org/ws/2004/08/addressing">{http://extoll.de/mex/protocol/speak}:SpeakRequest</ns1:Action>
+      </env:Header>
+</env:Envelope>
+      
+      
+      """
+      
+      
+      
+    test("Streamin a real message") {
+      
+    	// Create and print
+        //---------------------
+      
+    	 AnyXList(classOf[Action])
+        AnyXList(classOf[TestBody])
+        
+      
+        var message = SOAPMessage(ByteBuffer.wrap(realMessage.getBytes))
+       
+       
+        
+        println("Real message example: "+message.toXMLString)
+
+      
     }
 
     

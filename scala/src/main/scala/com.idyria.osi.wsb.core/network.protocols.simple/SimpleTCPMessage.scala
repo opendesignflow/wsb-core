@@ -1,5 +1,5 @@
-package com.idyria.osi.wsb.core.network.connectors.simple
-
+package com.idyria.osi.wsb.core.network.protocols.simple
+ 
 
 import com.idyria.osi.wsb.core.network._
 import com.idyria.osi.wsb.core.network.connectors.tcp._
@@ -22,8 +22,9 @@ import java.nio._
 */
 class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer]( ctx => new SimpleProtocolHandler(ctx) ) {
 
+  
 
-
+ 
 
 }
 
