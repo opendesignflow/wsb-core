@@ -4,13 +4,13 @@
 package com.idyria.osi.wsb.core.broker.tree
 
 import com.idyria.osi.wsb.core.message.Message
-
 import scala.util.matching.Regex
 import com.idyria.osi.ooxoo.core.buffers.structural.XList
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.ooxoo.core.buffers.structural.xattribute
 import com.idyria.osi.ooxoo.core.buffers.structural.xelement
 import com.idyria.osi.ooxoo.core.buffers.datatypes._
+import java.util.regex.Pattern
 
 /**
  * @author rleys
@@ -68,6 +68,18 @@ trait Intermediary extends ElementBuffer {
   
   var upClosure: (Message => Unit) = null
 
+  // Up Specific
+  //-------------------
+  
+  /**
+   * Up Actions can start somewhere else that the calling intermediary
+   * 
+   * For example, you can up messages from you top tree instance, and configure it to up from some sub intermediary
+   * that add some default message processing, to avoid the user having to know where the start is located
+   * 
+   */
+  var upStart : Intermediary = null
+  
   // Up/Down runtime
   //---------------
   final def down(message: Message): Unit = {
@@ -81,7 +93,7 @@ trait Intermediary extends ElementBuffer {
       //-- Proceed locally and to descendants
       case Some(matchResult) if(acceptDownClosure(message)==true) =>
 
-        println(s"---> Accepted $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
+        println(s"---> Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
 
         // Local closure
         //-------------
@@ -128,6 +140,8 @@ trait Intermediary extends ElementBuffer {
     	
       //-- Ignore
       case _ =>
+         
+        println(s"---> Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
 
       //println(s"---> Rejected")
 
@@ -137,30 +151,50 @@ trait Intermediary extends ElementBuffer {
 
   final def up(message: Message): Unit = {
 
-    //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
-	  
-    // Set Upped on message and related if any
-    //--------
-    message.upped = true
-    if (message.relatedMessage!=null) {
-      message.relatedMessage.upped = true
+     
+     println(s"[Up] Upstart is $upStart")
+    // if the upStart is delocalized, and upping has not started, start at upStart
+    if (this.upStart!=null && this.upStart!=this && message.upped == false) {
+      
+      println(s"[Up] Upstart is delocalized")
+      
+      this.upStart.up(message)
+      
+    } 
+    // Otherwise, everything should be normal
+    else {
+      
+    	// Set Upped on message and related if any
+	    //--------
+	    message.upped = true
+	    if (message.relatedMessage!=null) {
+	      message.relatedMessage.upped = true
+	    }
+	    
+	    // Up Closure
+	    //-------------
+	    upClosure match {
+	      case null => 
+	      case closure if(acceptUpClosure(message)==false) =>
+	      case closure => 
+	        
+	        println(s"[Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	        closure(message)
+	    }
+	
+	    // Pass to parent if possible
+	    //---------------
+	    if (this.parentIntermediary != null) {
+	
+	      this.parentIntermediary.up(message)
+	
+	    }
+      
     }
     
-    // Up Closure
-    //-------------
-    upClosure match {
-      case null => 
-      case closure if(acceptUpClosure(message)==false) =>
-      case closure => closure(message)
-    }
-
-    // Pass to parent if possible
-    //---------------
-    if (this.parentIntermediary != null) {
-
-      this.parentIntermediary.up(message)
-
-    }
+    //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
+	  
+    
 
   }
 
@@ -205,4 +239,20 @@ class ResponseException(var responseMessage : Message) extends Exception {
 
 object Intermediary {
 
+  object Filter {
+    
+     /**
+	   * Returns a filter regexp for the provided string, like this:
+	   * 
+	   * .*$str.*  with the str content beeing escaped
+	   * 
+	   */
+	  def apply(str:String) : Regex = {
+	    
+	    s""".*${Pattern.quote(str)}.*""".r
+	    
+	  }
+    
+  }
+  
 }
