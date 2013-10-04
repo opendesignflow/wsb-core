@@ -36,15 +36,18 @@ class Network ( var engine : WSBEngine ) extends Lifecycle {
   */
   def send(msg: Message) : Unit = {
 
-    connectors.find { connector => connector.send(msg) } match {
-        
+    connectors.find { c => c.canHandle(msg) } match {
+      
       // 
       case Some(connector) =>
 
-            //connector.send
+            connector.send(msg)
 
       case None => throw new RuntimeException("Cannot send message because no Connector would send it ")
+      
     }
+    
+  
 
   }
 

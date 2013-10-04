@@ -90,6 +90,15 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
 
 
   }
+  
+  /**
+   * Stop kills thread per default
+   */
+  def lStop = {
+    
+    this.stopThread = true
+    
+  }
 
   // Run
   //----------------
@@ -97,7 +106,7 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   /**
    * To be implemented by Server connector
    */
-  override def run
+  //override def run
 
 
 }
