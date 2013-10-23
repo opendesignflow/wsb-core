@@ -8,6 +8,7 @@ import java.nio._
 import java.io._
 import java.util.concurrent._
 import com.idyria.osi.wsb.core.network.NetworkContext
+import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 
 @Ignore
 class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {

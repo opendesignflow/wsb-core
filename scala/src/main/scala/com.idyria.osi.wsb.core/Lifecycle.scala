@@ -18,10 +18,9 @@ trait Lifecycle {
 
   protected def lStart
 
-  protected def lSuspend =  {
+  protected def lSuspend = {
 
   }
-
 
   protected def lResume = {
 
@@ -39,30 +38,34 @@ trait Lifecycle {
   /**
    * Progess to targetState
    */
-  private def cycleTo(targetState : String) = {
+  private def cycleTo(targetState: String): Unit = {
 
-    if (targetState=="init") {
-      this.lInit
-      this.state="init"
-    }
+    (this.state, targetState) match {
 
+      case ("none", "init") ⇒
 
-    if (targetState=="start") {
-
-      if (state=="none") {
         this.lInit
-      }
-      this.lStart
-      this.state = "start"
-    }
+        this.state = "init"
 
-    if (targetState=="stop") {
+      // Start
+      case (actual, "start") if (actual!="start") ⇒
 
-      // If not in state start, this is an error
-      if (state!="start")
-        throw new RuntimeException("Can only cycle to stop from start")
-      this.lStop
-      this.state = "stop"
+        cycleTo("init")
+        this.lStart
+        this.state = "start"
+
+      // Stop
+      case ("start", "stop") ⇒
+
+        this.lStop
+        this.state = "stop"
+
+      case (_, "stop") ⇒ throw new RuntimeException("Can only cycle to stop from start")
+      
+      
+      // Ignore
+      case _           ⇒
+
     }
 
   }
@@ -72,7 +75,5 @@ trait Lifecycle {
   def cycleToStart = cycleTo("start")
 
   def cycleToStop = cycleTo("stop")
-
-
 
 }

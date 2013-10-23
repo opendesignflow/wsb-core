@@ -3,10 +3,12 @@
  */
 package com.idyria.osi.wsb.core.message
 
-import com.idyria.osi.wsb.core.network._
-import java.nio._
-import com.idyria.osi.ooxoo.core.buffers.structural.xelement_base
+import java.nio.ByteBuffer
+
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
+import com.idyria.osi.ooxoo.core.buffers.structural.xelement_base
+import com.idyria.osi.wsb.core.message.soap.SOAPMessage
+import com.idyria.osi.wsb.core.network.NetworkContext
 /**
  * @author rleys
  *
@@ -84,19 +86,6 @@ trait MessageFactory {
 
 object Message {
 
-  var messageFactories = Map[String, MessageFactory]()
-
-  /**
-   * Returns a Message Instance matching the given message type
-   */
-  def apply(messageType: String): Option[MessageFactory] = messageFactories.get(messageType)
-
-  def apply(messageType: String, factory: MessageFactory) = {
-
-    messageFactories = messageFactories + (messageType -> factory)
-
-  }
-  
   object Qualifier {
     
     /**
@@ -117,6 +106,35 @@ object Message {
       
     }
   }
+  
+  // Factories
+  //----------------------
+  
+  
+  var messageFactories = Map[String, MessageFactory]()
 
+  //-- Message types known to this library
+  this("soap",SOAPMessage)
+  
+  /**
+   * Returns a Message Instance matching the given message type
+   */
+  def apply(messageType: String): Option[MessageFactory] = messageFactories.get(messageType)
+
+  def apply(messageType: String, factory: MessageFactory) = {
+
+    messageFactories = messageFactories + (messageType -> factory)
+
+  }
+  
+  
+
+}
+
+/**
+ * 
+ */
+trait UpMessage {
+  
 }
 

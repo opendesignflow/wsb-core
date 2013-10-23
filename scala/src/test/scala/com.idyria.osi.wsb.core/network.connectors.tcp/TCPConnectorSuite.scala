@@ -2,24 +2,19 @@ package com.idyria.osi.wsb.core.network.connectors.tcp
 
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
-
 import java.util.concurrent._
-
 import java.net._
-
 import org.scalatest._
 import org.scalatest.GivenWhenThen
 import org.scalatest.FeatureSpec
 import org.scalatest.GivenWhenThen
 import java.net.URLClassLoader
 import java.net.URL
- 
 import java.io._
 import java.nio._
 import java.nio.charset._
 import java.nio.channels._
-
-import com.idyria.osi.wsb.core.network.AbstractConnector
+import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 
 @Ignore
 @DoNotDiscover

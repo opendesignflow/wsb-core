@@ -3,6 +3,7 @@ package com.idyria.osi.wsb.core.broker
 import com.idyria.osi.wsb.core._
 import com.idyria.osi.wsb.core.broker.tree._
 import com.idyria.osi.wsb.core.message.Message
+import com.idyria.osi.wsb.core.message.UpMessage
 
   
 class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
@@ -35,11 +36,24 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
 
       msg : Message => 
 
-          println("Broker Got Message: "+msg.getClass) 
+        msg match {
+          case m : UpMessage => 
+            
+            println("received Message to up") 
+            
+            brokeringTree.up(msg)
+            
+          case _ => 
+            
+            println("Broker Got Down Message: "+msg.getClass) 
           println("-> Qualifier "+msg.qualifier) 
+            brokeringTree.down(msg) 
+        }
+        
+          
 
           // broker
-          brokeringTree.down(msg) 
+          
 
   }
 

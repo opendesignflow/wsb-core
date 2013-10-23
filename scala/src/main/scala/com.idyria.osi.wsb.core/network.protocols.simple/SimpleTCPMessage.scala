@@ -4,11 +4,10 @@ package com.idyria.osi.wsb.core.network.protocols.simple
 import com.idyria.osi.wsb.core.network._
 import com.idyria.osi.wsb.core.network.connectors.tcp._
 import com.idyria.osi.wsb.core.network.protocols._
-
 import com.idyria.osi.tea.listeners.ListeningSupport
-
 import java.nio.channels._
 import java.nio._
+import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
 
 /**
     This Connector provides a TCP connector with following protocol:
@@ -28,8 +27,34 @@ class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer](
 
 }
 
-object SimpleMessageTCPConnector {
+object SimpleMessageTCPConnector extends ConnectorFactory {
 
+  
+  def newInstance(connectionString: String) = {
+    
+    // Parse Connection String
+    //-------------------
+   /* """.+(?::([0-9]+))?""".r.findFirstMatchIn(connectionString.trim()) match {
+      case Some(m) => 
+        
+        
+        
+    }*/
+    val stringFormat = """((?:[a-z0-9]+\.?)+)(?::([0-9]+))?""".r
+    var stringFormat(host,port) = connectionString.trim()
+    
+    //-- Create
+    //------------
+    var connector = new SimpleMessageTCPConnector
+    connector.address = host
+    port match {
+      case null => 
+      case _ => connector.port = Integer.parseInt(port)
+    }
+    
+    connector
+  }
+  
 
     //implicit def convertStringToByteBuffer(str : String ) : ByteBuffer = ByteBuffer.wrap(str.getBytes)
 

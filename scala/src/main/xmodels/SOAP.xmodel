@@ -32,8 +32,36 @@ object SOAP extends ModelBuilder {
     
     "env:Fault" is {
         
-        "Code" ofType "string"
-        "Message" ofType "string"
+        "env:Code" is {
+            
+            "env:Value" enum("VersionMismatch","MustUnderstand","DataEncodingUnknown","Sender","Receiver")
+            
+            "env:Subcode" is {
+            
+                "env:Value" ofType "string"
+                
+                "env:Subcode" is {
+                }
+            }
+        } 
+        
+        "env:Reason" is {
+            "env:Text" ofType "string"
+        }
+        
+        // Optional
+        //------------
+        "env:Node" ofType "uri"
+        "env:Role" ofType "uri"
+        
+        "env:Detail" is {
+            
+            any  
+        
+        }
+        
+    
+        
     }
 
 }

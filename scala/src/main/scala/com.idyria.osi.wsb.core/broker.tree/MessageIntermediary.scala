@@ -11,7 +11,7 @@ import com.idyria.osi.wsb.core.message.Message
  * 
  * 
  */
-abstract class MessageIntermediary[MT <: Message] extends Intermediary {
+trait MessageIntermediary[MT <: Message] extends Intermediary {
  
   
   // Message closure
@@ -35,8 +35,8 @@ abstract class MessageIntermediary[MT <: Message] extends Intermediary {
   //-----------------------
   
   //-- Only accept messages of provided type
-  this.acceptDown{ _.getClass() == messageType }
-  this.acceptUp{ _.getClass() == messageType }
+  this.acceptDown{ m => messageType.isAssignableFrom(m.getClass()) }
+  this.acceptUp{ m =>  messageType.isAssignableFrom(m.getClass())  }
   
   //-- Call on message closure
   this.downClosure = {

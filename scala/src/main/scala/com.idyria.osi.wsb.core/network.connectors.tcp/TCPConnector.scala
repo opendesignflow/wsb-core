@@ -2,7 +2,6 @@ package com.idyria.osi.wsb.core.network.connectors.tcp
 
 import scala.collection.JavaConversions._
 import com.idyria.osi.wsb.core.message._
-import com.idyria.osi.wsb.core.network.AbstractConnector
 import com.idyria.osi.wsb.core.network.protocols.ProtocolHandler
 import com.idyria.osi.wsb.core.broker.MessageBroker
 import com.idyria.osi.wsb.core.network._
@@ -15,6 +14,7 @@ import java.nio.channels._
 import java.nio._
 import java.net.Inet4Address
 import java.net.InetAddress
+import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 
 /**
  *
@@ -165,12 +165,16 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx => ctx.qualifier.split(":") match {
-
-        case arr if (arr.length != 2) => false
-        case arr if (arr(0) == this.address && arr(1) == this.port.toString) => true
-        case _ => false
-      }
+      case ctx if (this.direction == AbstractConnector.Direction.Client)=> 
+        ctx.qualifier match {
+          
+          case NetworkContext.NetworkString(protocol,message,connectionString) if(protocol==this.protocolType && message==messageType) => true
+          case _ => false
+          
+        }
+       
+      
+      case _ => false
     }
 
   }
@@ -209,7 +213,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
   /**
    * Start Server Socket Thread
    */
-  override def lStart = {
+/*  override def lStart = {
 
     this.start
     /*
@@ -236,7 +240,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
         }*/
 
-  }
+  }*/
 
   override def lStop = {
 
@@ -562,7 +566,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 	                    messages.foreach {
 	                      m =>
 	                        
-	                       // println("[Client] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
+	                        println("[Client] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
 	                        
 	                        // Create Message
 	                        var message = factory(m)

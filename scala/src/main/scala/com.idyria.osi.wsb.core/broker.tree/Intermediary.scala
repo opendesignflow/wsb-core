@@ -11,12 +11,13 @@ import com.idyria.osi.ooxoo.core.buffers.structural.xattribute
 import com.idyria.osi.ooxoo.core.buffers.structural.xelement
 import com.idyria.osi.ooxoo.core.buffers.datatypes._
 import java.util.regex.Pattern
+import com.idyria.osi.tea.logging.TLogSource
 
 /**
  * @author rleys
  *
  */
-trait Intermediary extends ElementBuffer {
+trait Intermediary extends ElementBuffer with TLogSource {
 
   /**
    * A Name for user/api to formally identify the intermediary
@@ -39,18 +40,19 @@ trait Intermediary extends ElementBuffer {
   var parentIntermediary: Intermediary = null
   
   // Up/ Down closures for user processing
+  // -- The Closures are stored in a list of closures that all must return true for the message to be accepted
   //---------------
   
   /**
    * Per default always accept message
    */
-  var acceptDownClosure: (Message => Boolean) = { m=> true}
+  var acceptDownClosures: List[Message => Boolean] = List({ m=> true})
   
   /**
    * Define the Closure used to accept a messagein the down direction
    * 
    */
-  def acceptDown(cl: Message => Boolean) = acceptDownClosure = cl
+  def acceptDown(cl: Message => Boolean) = acceptDownClosures = acceptDownClosures :+ cl
   
   var downClosure: (Message => Unit) = null
 
@@ -58,18 +60,15 @@ trait Intermediary extends ElementBuffer {
    /**
    * Per default always accept message
    */
-  var acceptUpClosure: (Message => Boolean) = { m=> true}
+  var acceptUpClosures: List[Message => Boolean] = List({ m=> true})
   
   /**
    * Define the Closure used to accept a messagein the down direction
    * 
    */
-  def acceptUp(cl: Message => Boolean) = acceptUpClosure = cl
+  def acceptUp(cl: Message => Boolean) = acceptUpClosures = acceptUpClosures :+ cl
   
   var upClosure: (Message => Unit) = null
-
-  // Up Specific
-  //-------------------
   
   /**
    * Up Actions can start somewhere else that the calling intermediary
@@ -91,9 +90,9 @@ trait Intermediary extends ElementBuffer {
     filter.findFirstMatchIn(message.qualifier) match {
 
       //-- Proceed locally and to descendants
-      case Some(matchResult) if(acceptDownClosure(message)==true) =>
+      case Some(matchResult) if(acceptDownClosures.forall(_(message))) =>
 
-        println(s"---> Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
+        logInfo(s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
 
         // Local closure
         //-------------
@@ -141,7 +140,7 @@ trait Intermediary extends ElementBuffer {
       //-- Ignore
       case _ =>
          
-        println(s"---> Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
+        logInfo(s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
 
       //println(s"---> Rejected")
 
@@ -152,11 +151,11 @@ trait Intermediary extends ElementBuffer {
   final def up(message: Message): Unit = {
 
      
-     println(s"[Up] Upstart is $upStart")
+     logInfo(s"${depthString("--")} [Up] Upstart is $upStart")
     // if the upStart is delocalized, and upping has not started, start at upStart
     if (this.upStart!=null && this.upStart!=this && message.upped == false) {
       
-      println(s"[Up] Upstart is delocalized")
+      logInfo(s"${depthString("--")} [Up] Upstart is delocalized")
       
       this.upStart.up(message)
       
@@ -175,10 +174,19 @@ trait Intermediary extends ElementBuffer {
 	    //-------------
 	    upClosure match {
 	      case null => 
-	      case closure if(acceptUpClosure(message)==false) =>
+	        
+	        println(s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
+	      
+	        
+	      case closure if( acceptUpClosures.forall(_(message))==false) =>
+	        
+	         println(s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	      
+	        
 	      case closure => 
 	        
-	        println(s"[Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	        println(s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	      
 	        closure(message)
 	    }
 	
@@ -197,6 +205,9 @@ trait Intermediary extends ElementBuffer {
     
 
   }
+  
+  // Response
+  //----------------------------
 
   /**
    * Sends up a message as response to another one
@@ -212,8 +223,6 @@ trait Intermediary extends ElementBuffer {
    
   }
 
-
-  def intermediaryTest = println("Hi!")
 
   // Language
   //-------------------
@@ -231,6 +240,30 @@ trait Intermediary extends ElementBuffer {
     intermediary
   }
 
+  // Utilities
+  //-----------------
+  
+  /**
+   * Returns the depth of this intermediary
+   */
+  def depth : Int = {
+    
+    var current = this
+    var count = 0
+    var steps = while(current.parentIntermediary!=null) {
+      current = current.parentIntermediary;
+      count += 1
+    } 
+      
+    count
+    
+  }
+  
+  /**
+   * Returns a string formed by the separated repeated $depth times
+   */
+  def depthString(separator: String) : String = ( for ( i <- 0 to depth) yield separator ).mkString
+  
 }
 
 class ResponseException(var responseMessage : Message) extends Exception {

@@ -5,6 +5,8 @@ package com.idyria.osi.wsb.core.network
 
 import com.idyria.osi.wsb.core._
 import com.idyria.osi.wsb.core.message._
+import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
+import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
 
 /**
  * @author rleys
@@ -36,6 +38,8 @@ class Network ( var engine : WSBEngine ) extends Lifecycle {
   */
   def send(msg: Message) : Unit = {
 
+    // Try to find a connector that will handle the message
+    //----------------------
     connectors.find { c => c.canHandle(msg) } match {
       
       // 
@@ -43,9 +47,36 @@ class Network ( var engine : WSBEngine ) extends Lifecycle {
 
             connector.send(msg)
 
-      case None => throw new RuntimeException("Cannot send message because no Connector would send it ")
+      case None => 
+        
+        // Try to create a connector for the message in client mode
+        //----------------------
+        ConnectorFactory(msg.networkContext.qualifier) match {
+          
+          case Some(connector) => 
+            
+            // Register and Start
+            //-------------------
+            this.addConnector(connector)
+            connector.direction = AbstractConnector.Direction.Client
+            connector.lStart
+            connector.waitForStart()
+            
+            // Send
+            //-------------
+            connector.send(msg)
+            
+            
+          case _ => throw new RuntimeException("Cannot send message because no Connector would send it ")
+          
+        }
+        
+        
       
     }
+    
+    //
+    
     
   
 
