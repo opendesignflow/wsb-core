@@ -56,6 +56,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
         var message = SOAPMessage()
 
         println(message.toXMLString)
+        println(message.toXMLString)
 
 
     }
@@ -214,6 +215,12 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
         
         println("Real message example: "+message.toXMLString)
 
+      
+    }
+    
+    test("Streamin with Any") {
+      
+      var msg = """<?xml version="1.0" ?><env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Header><ns1:Action xmlns:ns1="http://schemas.xmlsoap.org/ws/2004/08/addressing">fault</ns1:Action></env:Header><env:Body><env:Fault><Message>User rleys is unknown</Message></env:Fault></env:Body></env:Envelope>"""
       
     }
 

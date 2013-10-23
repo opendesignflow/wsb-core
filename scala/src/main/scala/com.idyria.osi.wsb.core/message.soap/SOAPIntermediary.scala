@@ -3,6 +3,7 @@ package com.idyria.osi.wsb.core.message.soap
 import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.wsb.core.network.NetworkContext
+import com.idyria.osi.wsb.core.message.soap.Text
 
 
 
@@ -11,7 +12,7 @@ import com.idyria.osi.wsb.core.network.NetworkContext
  * 
  * Returns SOAP Faults on errors
  */
-class SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
+trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
 
   // Message Type
   //--------------------
@@ -29,14 +30,15 @@ class SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
     // Create Fault
     //------------------
     var f = new Fault
-    f.message = new Message
-    f.message.data = e.getMessage
+    f.reason = Reason()
+    f.reason.text =  e.getMessage
+
     
     // Add To new SOAPMessage
     //-------------
     var resp = new SOAPMessage
     resp.body.content+=f
-    resp.qualifier = "fault"
+    resp.qualifier = com.idyria.osi.wsb.core.message.Message.Qualifier(f)
       
     // Return
     //------------------
