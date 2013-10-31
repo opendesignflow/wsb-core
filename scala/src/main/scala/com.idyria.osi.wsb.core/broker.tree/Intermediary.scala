@@ -119,7 +119,9 @@ trait Intermediary extends ElementBuffer with TLogSource {
 			    //throw e
               
 			  // In case of error, record to message
-              case e : Throwable => message(e)
+              case e : Throwable =>
+                //e.printStackTrace()
+                message(e)
                 	
             } finally {
             	
@@ -175,17 +177,17 @@ trait Intermediary extends ElementBuffer with TLogSource {
 	    upClosure match {
 	      case null => 
 	        
-	        println(s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
+	        logInfo(s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
 	      
 	        
 	      case closure if( acceptUpClosures.forall(_(message))==false) =>
 	        
-	         println(s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	         logInfo(s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 	      
 	        
 	      case closure => 
 	        
-	        println(s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	        logInfo(s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 	      
 	        closure(message)
 	    }

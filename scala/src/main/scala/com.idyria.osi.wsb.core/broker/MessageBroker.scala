@@ -4,9 +4,10 @@ import com.idyria.osi.wsb.core._
 import com.idyria.osi.wsb.core.broker.tree._
 import com.idyria.osi.wsb.core.message.Message
 import com.idyria.osi.wsb.core.message.UpMessage
+import com.idyria.osi.tea.logging.TLogSource
 
   
-class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
+class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource {
 
    
  
@@ -39,14 +40,14 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle {
         msg match {
           case m : UpMessage => 
             
-            println("received Message to up") 
+            logFine("received Message to up") 
             
             brokeringTree.up(msg)
             
           case _ => 
             
-            println("Broker Got Down Message: "+msg.getClass) 
-          println("-> Qualifier "+msg.qualifier) 
+            logFine("Broker Got Down Message: "+msg.getClass) 
+            logFine("-> Qualifier "+msg.qualifier) 
             brokeringTree.down(msg) 
         }
         

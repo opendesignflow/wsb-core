@@ -4,7 +4,6 @@
 package com.idyria.osi.wsb.core.network.connectors
 
 import com.idyria.osi.wsb.core.Lifecycle
-import com.idyria.osi.wsb.core.Logsource
 import com.idyria.osi.wsb.core.message._
 import java.util.concurrent._
 import java.nio._
@@ -12,6 +11,7 @@ import scala.language.implicitConversions
 import com.idyria.osi.wsb.core.network.NetworkContext
 import com.idyria.osi.wsb.core.network.Network
 import com.idyria.osi.wsb.core.network.protocols.simple.SimpleMessageTCPConnector
+import com.idyria.osi.tea.logging.TLogSource
 
 /**
  * Base class for Connectors.
@@ -24,7 +24,7 @@ import com.idyria.osi.wsb.core.network.protocols.simple.SimpleMessageTCPConnecto
  * @author rleys
  *
  */
-abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with Logsource {
+abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with TLogSource {
 
   /**
    * Network This Connector is registered under
