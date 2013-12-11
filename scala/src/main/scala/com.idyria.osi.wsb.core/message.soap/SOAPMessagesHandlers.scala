@@ -2,6 +2,7 @@ package com.idyria.osi.wsb.core.message.soap
 
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.ooxoo.core.buffers.structural.AnyXList
+import scala.reflect.ClassTag
 
 
 /**
@@ -12,10 +13,11 @@ import com.idyria.osi.ooxoo.core.buffers.structural.AnyXList
  */
 trait SOAPMessagesHandler extends SOAPIntermediary {
   
+
   /**
    * Maps qualifier strings to actual handling closures
    */
-  var messageHandlers = Map[(String,Class[_ <: ElementBuffer]),(  ElementBuffer  => Unit )]()
+  var messageHandlers = Map[(String,Class[_ <: ElementBuffer]),(  (SOAPMessage,ElementBuffer)  => Any )]()
   
   
   // Intermediary accept only if the qualifier is present in handlers map
@@ -45,7 +47,7 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
              	case payload if (payload.getClass == inputCheck._2) =>
              	  
              	  // Call handler
-             	  closure(payload.asInstanceOf[ElementBuffer])
+             	  closure(m,payload.asInstanceOf[ElementBuffer])
              	  
              	case _ => 
           
@@ -81,7 +83,7 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
   //---------------
   
   
-  def onMessageType[T<:ElementBuffer](c: Class[T],cl:T=>Unit) = {
+  def onMessageType[T<:ElementBuffer](c: Class[T],cl: (SOAPMessage,T) =>Any) = {
     
      // Record in OOXOO
     //-------------------
@@ -94,11 +96,11 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
     // Create Closure that makes the checks
     //--------------------
     val realClosure = {
-      b : ElementBuffer => 
+      (m:SOAPMessage , b : ElementBuffer) => 
         
         // If Hte payload type matches the closure one then call
         if (c.isAssignableFrom(b.getClass)) {
-          cl(b.asInstanceOf[T])
+          cl(m,b.asInstanceOf[T])
         } 
     }
     
@@ -116,15 +118,15 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
    * 
    * @warning This method records the Base Type in AnyXList so make sure the objects will be generated upon reception of SOAP Message
    */
-  def on[T <: ElementBuffer](cl: T => Unit) = {
+  def on[T <:  ElementBuffer](cl: (SOAPMessage,T) => Any)(implicit tag: ClassTag[T]) = {
     
     // Get Type of input
     //-----------------
     var closureMethod = cl.getClass().getMethods().filter {
-      m => m.getName() == "apply" && m.getReturnType() == Void.TYPE
+      m => m.getName() == "apply" && m.getReturnType() == classOf[Any]
     }.head
 
-    var elementType = (closureMethod.getParameterTypes()(0).asInstanceOf[Class[T]])
+    var elementType = tag.runtimeClass.asInstanceOf[Class[T]]
     
     this.onMessageType(elementType,cl)
     

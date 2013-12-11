@@ -180,7 +180,7 @@ class SimpleProtocolHandler(var localContext : NetworkContext) extends ProtocolH
         Each call to send() creates a message
 
     */
-    def send (buffer: ByteBuffer) :  ByteBuffer  = {
+    def send (buffer: ByteBuffer,nc: NetworkContext) :  ByteBuffer  = {
 
 
 

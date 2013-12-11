@@ -4,11 +4,11 @@
 package com.idyria.osi.wsb.core.message
 
 import java.nio.ByteBuffer
-
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.ooxoo.core.buffers.structural.xelement_base
 import com.idyria.osi.wsb.core.message.soap.SOAPMessage
 import com.idyria.osi.wsb.core.network.NetworkContext
+import com.idyria.osi.wsb.core.message.soap.JSONSOAPMessage
 /**
  * @author rleys
  *
@@ -31,49 +31,82 @@ trait Message {
    * Set to true if this message or a response message has been upped (answered so to say)
    */
   var upped = false
-  
-  
+
   /**
    * To be implemented by messages for connectors to retrieve bytes for this message
    */
   def toBytes: ByteBuffer
-  
+
   // Error Handling
   //-----------------
-  
+
   /**
    * if an intermediary fails by throwing an exception, this doesn't mean the whole tree processing fails, because handling might differ based on applications
    * However, errors are stored here so that some special intermediary can log errors or do some other stuff
    */
-  var errors =  List[Throwable]()
-  
+  var errors = List[Throwable]()
+
   /**
    * Execute closure on all errors, and remove errors from list
    * @return the Gathered Result list
    */
-  def consumeErrors(cl: Throwable => Any) : List[Any] = {
-    
+  def consumeErrors(cl: Throwable => Any): List[Any] = {
+
     var res = List[Any]()
     this.errors = this.errors.filter {
-      case e : Throwable => res = cl(e) :: res ; false
+      case e: Throwable => res = cl(e) :: res; false
     }
-    
+
     res
-    
+
   }
-  
-  
-  
+
+  // Transformation: 
+  //------------------------
+
+  /**
+   * Same as transform with explicit class, but transforms to current type (copies current message type)
+   * @see transform(Class[T](cl)
+   */
+  def transform(cl: this.type => Any): this.type = {
+    transform[this.type](this.getClass().asInstanceOf[Class[this.type]])(cl)
+  }
+
+  /**
+   * Creates a new Message of the provided class, with required stuff already copied, like network context etc...
+   * Then applies the provided closure to the new message
+   */
+  def transform[T <: Message](mc: Class[T])(cl: T => Any): T = {
+
+    // Create
+    //-----------
+    var m = mc.newInstance()
+    
+    //-- Copy required parameters
+    m.networkContext = this.networkContext
+    m.errors = this.errors
+    m.relatedMessage = this.relatedMessage
+    m.qualifier = this.qualifier
+
+    // Apply
+    //----------
+    cl(m)
+
+    // Return
+    //--------------
+    m
+  }
+
   // Apply functions
   //---------
-  
+
   /**
    * Record an error into this message
    */
   def apply(e: Throwable) = {
-    
+
     this.errors = e :: this.errors
-    
+
   }
 
 }
@@ -87,35 +120,34 @@ trait MessageFactory {
 object Message {
 
   object Qualifier {
-    
+
     /**
      * Return a qualifier in the form of {ns}:ElementName from provided ElementBuffer
      */
-    def apply[T<:ElementBuffer](elt: T) : String = apply(elt.getClass())
-    
-    def apply[T<:ElementBuffer](elt: Class[T]) : String = {
-      
+    def apply[T <: ElementBuffer](elt: T): String = apply(elt.getClass())
+
+    def apply[T <: ElementBuffer](elt: Class[T]): String = {
+
       xelement_base(elt) match {
         case null => ""
-          
-        case elt if(elt.ns!=null && elt.ns.length()>0) => s"{${elt.ns}}:${elt.name}"
+
+        case elt if (elt.ns != null && elt.ns.length() > 0) => s"{${elt.ns}}:${elt.name}"
 
         case elt => s"${elt.name}"
-        
+
       }
-      
+
     }
   }
-  
+
   // Factories
   //----------------------
-  
-  
   var messageFactories = Map[String, MessageFactory]()
 
   //-- Message types known to this library
-  this("soap",SOAPMessage)
-  
+  this("soap", SOAPMessage)
+  this("json-soap", JSONSOAPMessage)
+
   /**
    * Returns a Message Instance matching the given message type
    */
@@ -126,15 +158,13 @@ object Message {
     messageFactories = messageFactories + (messageType -> factory)
 
   }
-  
-  
 
 }
 
 /**
- * 
+ *
  */
 trait UpMessage {
-  
+
 }
 

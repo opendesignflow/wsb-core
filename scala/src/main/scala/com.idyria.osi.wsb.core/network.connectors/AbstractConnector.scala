@@ -25,7 +25,7 @@ import com.idyria.osi.tea.logging.TLogSource
  *
  */
 abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with TLogSource {
-
+ 
   /**
    * Network This Connector is registered under
    */
@@ -70,10 +70,6 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   // User Send Interface
   //----------------------
 
-  /**
-   * Used by clients to send datas
-   */
-  def send(data: ByteBuffer)
 
   /**
    * Used to send to a specific network context peer
@@ -227,7 +223,7 @@ object ConnectorFactory {
             Some(connector)
         }
 
-      case _ ⇒ throw new RuntimeException(s"Context string does not match format: contextString")
+      case _ ⇒ throw new RuntimeException(s"Context string does not match format: $contextString")
     }
 
   }

@@ -14,6 +14,7 @@ import com.idyria.osi.wsb.core.message.soap.Text
  */
 trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
 
+ 
   // Message Type
   //--------------------
   def messageType = classOf[SOAPMessage]
@@ -89,7 +90,7 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
     
     resp.qualifier = qualifier
     
-    println("[Upping] "+resp.toXMLString)
+    //println("[Upping] "+resp.toXMLString)
     
     // Return
     //------------------

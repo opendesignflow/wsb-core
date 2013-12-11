@@ -437,7 +437,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     // Send back
                     //protocolSendData(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes),context);
 
-                    this.send(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes))
+                    this.send(ByteBuffer.wrap(("Repeat: "+receivedLine).getBytes),null)
 
                    // println("Client Got some datas: "+receivedLine)
                     None

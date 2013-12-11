@@ -81,6 +81,22 @@ trait Intermediary extends ElementBuffer with TLogSource {
   
   // Up/Down runtime
   //---------------
+  
+  /**
+   * Run message on the subtree of current intermediary
+   */
+  final def downTree(message: Message) : Unit = {
+    // Pass to children if closure did not throw anything out
+        try {
+	    	this.intermediaries.foreach{
+	    	  i => 
+	    	    i.down(message)
+	    	}
+    	} catch {
+	      case e : Throwable => throw e
+	    }
+    
+  }
   final def down(message: Message): Unit = {
 
     //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
@@ -92,8 +108,10 @@ trait Intermediary extends ElementBuffer with TLogSource {
       //-- Proceed locally and to descendants
       case Some(matchResult) if(acceptDownClosures.forall(_(message))) =>
 
-        logInfo(s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
+        logInfo[this.type](s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
 
+        
+        
         // Local closure
         //-------------
         downClosure match {
@@ -130,19 +148,12 @@ trait Intermediary extends ElementBuffer with TLogSource {
         }
         
         // Pass to children if closure did not throw anything out
-        try {
-	    	this.intermediaries.foreach{
-	    	  i => 
-	    	    i.down(message)
-	    	}
-    	} catch {
-	      case e : Throwable => throw e
-	    }
+        downTree(message)
     	
       //-- Ignore
       case _ =>
          
-        logInfo(s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
+        logInfo[this.type](s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
 
       //println(s"---> Rejected")
 
@@ -157,7 +168,7 @@ trait Intermediary extends ElementBuffer with TLogSource {
     // if the upStart is delocalized, and upping has not started, start at upStart
     if (this.upStart!=null && this.upStart!=this && message.upped == false) {
       
-      logInfo(s"${depthString("--")} [Up] Upstart is delocalized")
+      logInfo[this.type](s"${depthString("--")} [Up] Upstart is delocalized")
       
       this.upStart.up(message)
       
@@ -177,17 +188,17 @@ trait Intermediary extends ElementBuffer with TLogSource {
 	    upClosure match {
 	      case null => 
 	        
-	        logInfo(s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
+	        logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
 	      
 	        
 	      case closure if( acceptUpClosures.forall(_(message))==false) =>
 	        
-	         logInfo(s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	         logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 	      
 	        
 	      case closure => 
 	        
-	        logInfo(s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+	        logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 	      
 	        closure(message)
 	    }

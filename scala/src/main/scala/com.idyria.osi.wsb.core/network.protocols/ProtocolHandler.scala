@@ -2,11 +2,10 @@ package com.idyria.osi.wsb.core.network.protocols
 
 
 import  com.idyria.osi.wsb.core.network._
-
 import java.nio.channels._
 import java.nio._
-
 import scala.collection.mutable._
+import com.idyria.osi.wsb.core.message.Message
 
 
  /**
@@ -26,8 +25,8 @@ abstract class ProtocolHandler[DT <: Any](var context : NetworkContext)  {
     */
     def receive(buffer : ByteBuffer) : Boolean
 
-    def send (buffer: ByteBuffer) : ByteBuffer
-
+    def send(buffer: ByteBuffer,context:NetworkContext) : ByteBuffer
+    
 }
 
 // Companion object to get Protocol Handler from Network Context
@@ -37,14 +36,14 @@ object ProtocolHandler {
 
         // Create Procotol handler if non existent
         //----------------
-        if(!context.attachments.contains("protocolHandler")) {
-            context.attachments += ("protocolHandler" -> factory(context) )
+        if(!context.attachments.contains("protocol.handler")) {
+            context.attachments += ("protocol.handler" -> factory(context) )
         
-            println("Added protocol handler instance to context: "+context)
+            //println("Added protocol handler instance to context: "+context)
         }
 
         // Return
-        context.attachments("protocolHandler").asInstanceOf[ProtocolHandler[DT]]
+        context.attachments("protocol.handler").asInstanceOf[ProtocolHandler[DT]]
 
 
 
@@ -57,12 +56,12 @@ object ProtocolHandler {
 
         // Return null Procotol handler if non existent
         //----------------
-        if(!context.attachments.contains("protocolHandler")) {
+        if(!context.attachments.contains("protocol.handler")) {
            return null
         }
 
         // Return
-        context.attachments("protocolHandler").asInstanceOf[ProtocolHandler[DT]]
+        context.attachments("protocol.handler").asInstanceOf[ProtocolHandler[DT]]
 
   }
 

@@ -75,18 +75,6 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   def ! ( msg :  AnyRef) = this.engine ! msg
 
 
-  // Message Handling
-  //-------------------------
-
-  def handleMessage(message:Message) = {
-
-  }
-
-  def down(message:Message) = {
-
-  }
-
-
   // Lifecycle
   //------------------------
 

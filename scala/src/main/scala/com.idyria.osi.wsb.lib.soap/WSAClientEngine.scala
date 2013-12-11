@@ -48,7 +48,7 @@ class WSAClientEngine(e : WSBEngine = new WSBEngine) extends WSBClientEngine(e) 
     // Errors
     //---------------
     on[Fault] {
-      f => aib ! f
+      (message,f) => aib ! f
     }
     
   }
@@ -82,7 +82,7 @@ class WSAClientEngine(e : WSBEngine = new WSBEngine) extends WSBClientEngine(e) 
     // Register Response closure
     //-------------------
     responsesHandler.onMessageType(elementType,{
-      m : RT => 
+      (message,m : RT) => 
         
         try {
           respClosure(m)

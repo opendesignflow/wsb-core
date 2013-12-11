@@ -15,6 +15,7 @@ import java.nio._
 import java.net.Inet4Address
 import java.net.InetAddress
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
+import java.net.SocketOption
 
 /**
  *
@@ -78,39 +79,36 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
   // Send Interface
   //------------------------
-  /**
-   * Send through protocol as client
-   *
-   * @throw RuntimeExeception if no client context is available
-   */
-  def send(buffer: ByteBuffer) = {
-
-    // Client
-    //-----------------
-
-    require(this.clientNetworkContext != null)
-
-    //-- Pass to protocol implementation
-    var resBuffer = protocolSendData(buffer, this.clientNetworkContext)
-
-    //-- Send
-    this.clientNetworkContext.socket.write(resBuffer)
-
-  }
 
   /**
-   * Send for server side,
+   * Send for server side to client side
    */
   def send(buffer: ByteBuffer, context: TCPNetworkContext) = {
 
-   // println("Sending byte buffer to context")
+    this.direction match {
 
-    //-- Pass to protocol implementation
-    var resBuffer = protocolSendData(buffer, context)
+      case AbstractConnector.Direction.Client =>
 
-    //-- Send
-    while (resBuffer.remaining != 0)
-      context.socket.write(resBuffer)
+        require(this.clientNetworkContext != null)
+
+        //-- Pass to protocol implementation
+        var resBuffer = protocolSendData(buffer, this.clientNetworkContext)
+
+        //-- Send
+        this.clientNetworkContext.socket.write(resBuffer)
+
+      case AbstractConnector.Direction.Server =>
+
+        //-- Pass to protocol implementation
+        var resBuffer = protocolSendData(buffer, context)
+
+        //-- Send
+        while (resBuffer.remaining != 0)
+          context.socket.write(resBuffer)
+
+    }
+
+    // println("Sending byte buffer to context")
 
   }
 
@@ -130,6 +128,10 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       //------------------
       case (AbstractConnector.Direction.Server, _) =>
 
+        // Set Message to network context
+        //--------
+        msg.networkContext("message" -> msg)
+
         this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
         true
 
@@ -137,15 +139,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       //--------------
 
       //-- No Client network context, cannot send
-      case (AbstractConnector.Direction.Client, null) => 
-        
-        throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
+      case (AbstractConnector.Direction.Client, null) =>
 
+        throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
 
       //-- Client network connection is there, do it
       case (AbstractConnector.Direction.Client, ctx) =>
 
-        this.send(msg.toBytes)
+        this.send(msg.toBytes, ctx)
         true
 
     }
@@ -165,15 +166,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx if (this.direction == AbstractConnector.Direction.Client)=> 
+      case ctx if (this.direction == AbstractConnector.Direction.Client) =>
         ctx.qualifier match {
-          
-          case NetworkContext.NetworkString(protocol,message,connectionString) if(protocol==this.protocolType && message==messageType) => true
+
+          case NetworkContext.NetworkString(protocol, message, connectionString) if (protocol == this.protocolType && message == messageType) => true
           case _ => false
-          
+
         }
-       
-      
+
       case _ => false
     }
 
@@ -213,7 +213,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
   /**
    * Start Server Socket Thread
    */
-/*  override def lStart = {
+  /*  override def lStart = {
 
     this.start
     /*
@@ -282,7 +282,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
     started.release(Integer.MAX_VALUE)
   }
-  
+
   //-- React on common failed to signal to make sure no thread is blocking
   on("common.start.failed") {
 
@@ -301,7 +301,6 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
     //-- Prepare Read Buffer
     //----------------
-    var readBuffer = ByteBuffer.allocate(4096) // (Buffer of a page size per default)
 
     // Server Mode
     //-------------------
@@ -323,6 +322,8 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       this.serverSocket.configureBlocking(false);
       this.serverSocket.register(this.serverSocketSelector, SelectionKey.OP_ACCEPT)
 
+      //this.serverSocket.setOption(java.net.StandardSocketOptions.SO_RCVBUF, 4096)
+
       // Loop on Selection and handle actions
       //------------------
       @->("server.started")
@@ -332,6 +333,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
         try {
 
           // Select blocking, will throw an exception if socket is closed
+          logFine(s"-- Waiting for something to happen on selector thread")
           var selected = this.serverSocketSelector.select
 
           var keyIterator = this.serverSocketSelector.selectedKeys.iterator;
@@ -344,7 +346,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
               //--------------------
               case key if (key.isValid && key.isAcceptable) => {
 
-                //println("Accepting Connection")
+                logFine[TCPConnector]("-- Accepting Connection")
 
                 var clientSocket = serverSocket.accept
 
@@ -375,104 +377,130 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
               case key if (key.isValid && key.isReadable) => {
 
                 @->("server.read")
+                keyIterator.remove
+
+                logFine[TCPConnector]("-- Got Read key")
 
                 //-- Take Channel
                 var networkContext = key.attachment().asInstanceOf[TCPNetworkContext]
                 var socketChannel = networkContext.socket
 
+                var readBuffer = ByteBuffer.allocate(4096) // (Buffer of a page size per default)
+
                 try {
                   // Read Until 0, or < 0 closes the channel
                   //----------
-                  var continue = true;
-                  while (continue)
-                    socketChannel.read(readBuffer) match {
+                  //var continue = true;
+                  //while (continue) {
 
-                      // Continue Reading
-                      //------------
-                      case readbytes if (readbytes > 0) => {
+                  socketChannel.read(readBuffer) match {
 
-                        @->("server.read.datas")
+                    // Continue Reading
+                    //------------
+                    case readbytes if (readbytes > 0) => {
 
-                        // Pass Datas to underlying protocol
-                        readBuffer.flip
+                      @->("server.read.datas")
 
-                        /*var passedBuffer = ByteBuffer.allocate(readbytes)
+                      // Pass Datas to underlying protocol
+                      readBuffer.flip
+
+                      /*var passedBuffer = ByteBuffer.allocate(readbytes)
                                                 passedBuffer.put(readBuffer)
                                                 passedBuffer.flip*/
-                        //println("-> Din")
-                        var passedBuffer = readBuffer
+                      //println("-> Din")
+                      var passedBuffer = readBuffer
 
-                        //readBuffer.clear
-                        protocolReceiveData(passedBuffer, networkContext) match {
-                          case Some(messages) =>
+                      //readBuffer.clear
+                      protocolReceiveData(passedBuffer, networkContext) match {
+                        case Some(messages) =>
 
-                            // Get Message Factory
-                            Message(this.messageType) match {
+                          //-- Get Message Factory
+                          var factory = (Message(this.messageType), networkContext[String]("message.type")) match {
 
-                              case Some(factory) =>
+                            //-- Context Switched factory
+                            case (_, Some(contextFactoryName)) =>
 
-                                messages.foreach {
-                                  m =>
-                                    
-                                   //println("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
-                                    
-                                    // Create Message
-                                    var message = factory(m)
+                              Message(contextFactoryName) match {
+                                case Some(factory) => factory
+                                case None =>
+                                  throw new RuntimeException(s"TCP network context is configured with ${contextFactoryName} message type which has no registered factory")
 
-                                    // Append context
-                                    message.networkContext = networkContext
+                              }
 
-                                    // Send
-                                    this.network ! message
-                                }
+                            //-- Normal Connector default factory
+                            case (Some(factory), None) => factory
 
-                              case None =>
-                                throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
+                            case _ =>
+                              throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
 
-                            }
+                          }
 
-                          // Protocol not ready
-                          case None =>
+                          //-- Create Messages
+                          messages.foreach {
+                            m =>
 
-                        }
+                              //println("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
 
-                        // Clear Buffer for next read
-                        readBuffer.flip()
-                        //readBuffer.clear();
+                              // Create Message
+                              var message = factory(m)
+
+                              // Append context
+                              message.networkContext = networkContext
+
+                              // Send
+                              this.network ! message
+                          }
+
+                        // Protocol not ready
+                        case None =>
+
                       }
 
-                      // Nothing to read
-                      //----------------
-                      case readbytes if (readbytes == 0) => {
-
-                        @->("server.read.nodatas")
-                        readBuffer.clear();
-                        continue = false
-                      }
-
-                      // Close Client Connection
-                      //------------
-                      case readbytes if (readbytes < 0) => {
-
-                        @->("server.read.close")
-
-                        this.clientsContextsMap -= networkContext.toString
-                        socketChannel.close();
-                        continue = false
-                      }
+                      // Clear Buffer for next read
+                      readBuffer.flip()
+                      // continue = false
+                      //readBuffer.clear();
                     }
+
+                    // Nothing to read
+                    //----------------
+                    case readbytes if (readbytes == 0) => {
+
+                      @->("server.read.nodatas")
+                      readBuffer.clear();
+                      // continue = false
+                    }
+
+                    // Close Client Connection
+                    //------------
+                    case readbytes if (readbytes < 0) => {
+
+                      @->("server.read.close")
+
+                      logFine[TCPConnector]("-- Closing Connection")
+
+                      networkContext.@->("close")
+                      this.clientsContextsMap -= networkContext.toString
+                      socketChannel.close();
+                      //continue = false
+                    }
+                  }
+                  //}
                 } catch {
 
                   // IN case of IO error, forget about this connection
                   case e: java.io.IOException =>
 
                     this.clientsContextsMap -= networkContext.toString
+                    logFine[TCPConnector]("-- Closing Connection for: "+networkContext.toString)
+
+                    networkContext.@->("close")
 
                   case e: Throwable => throw e
 
                 } finally {
 
-                  keyIterator.remove
+                  // keyIterator.remove
                 }
               }
 
@@ -485,12 +513,16 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
             }
             // EOF Key matched
 
-          }
+            logFine("-- EOF Keys Looop")
+          } // EOF While has keys
+
         } catch {
 
           case e: java.nio.channels.ClosedSelectorException =>
 
-          case e: Throwable                                 => throw e
+            e.printStackTrace()
+
+          case e: Throwable => throw e
 
         }
 
@@ -514,22 +546,20 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       // Connect
       var addr = new InetSocketAddress(InetAddress.getByName(this.address), this.port)
       try {
-    	  this.clientSocket = SocketChannel.open(addr)
+        this.clientSocket = SocketChannel.open(addr)
       } catch {
-        case e : Throwable => 
-          
-  
-          
+        case e: Throwable =>
+
           println(s"Failed connection to ${addr} and port $port, not resolved: ${addr.isUnresolved()}")
-          
+
           // Make sure started signal has been given
           @->("common.start.failed")
-          
+
           throw e
       }
       // Record Network Context
       this.clientNetworkContext = new TCPNetworkContext(this.clientSocket)
-     // this.clientNetworkContext.qualifier = s"server@${this.clientNetworkContext.hashCode}"
+      // this.clientNetworkContext.qualifier = s"server@${this.clientNetworkContext.hashCode}"
 
       logInfo(s"Client Started")
 
@@ -538,6 +568,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
       // Data Loop
       //------------------------
+      var readBuffer = ByteBuffer.allocate(4096) // (Buffer of a page size per default)
       var continue = true;
       while (continue && !this.stopThread)
         try {
@@ -550,49 +581,45 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
               // Pass Datas to underlying protocol
               readBuffer.flip
 
-             /* var passedBuffer = ByteBuffer.allocate(readbytes)
+              /* var passedBuffer = ByteBuffer.allocate(readbytes)
               passedBuffer.put(readBuffer)
               passedBuffer.rewind*/
 
-              
               protocolReceiveData(readBuffer, clientNetworkContext) match {
-	              case Some(messages) =>
-	
-	                // Get Message Factory
-	                Message(this.messageType) match {
-	
-	                  case Some(factory) =>
-	
-	                    messages.foreach {
-	                      m =>
-	                        
-	                        println("[Client] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
-	                        
-	                        // Create Message
-	                        var message = factory(m)
-	
-	                        // Append context
-	                        message.networkContext = clientNetworkContext
-	
-	                        // Send
-	                        this.network ! message
-	                    }
-	
-	                  case None =>
-	                    throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
-	
-	                }
-	
-	              // Protocol not ready
-	              case None =>
-	
-	            }
-              
-              
-             // protocolReceiveData(passedBuffer, this.clientNetworkContext)
+                case Some(messages) =>
 
-              
-              
+                  // Get Message Factory
+                  Message(this.messageType) match {
+
+                    case Some(factory) =>
+
+                      messages.foreach {
+                        m =>
+
+                          println("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
+
+                          // Create Message
+                          var message = factory(m)
+
+                          // Append context
+                          message.networkContext = clientNetworkContext
+
+                          // Send
+                          this.network ! message
+                      }
+
+                    case None =>
+                      throw new RuntimeException(s"TCP Connector is configured with ${this.messageType} message type which has no registered factory")
+
+                  }
+
+                // Protocol not ready
+                case None =>
+
+              }
+
+              // protocolReceiveData(passedBuffer, this.clientNetworkContext)
+
               // Clear Buffer for next read
               readBuffer.flip();
             }
@@ -664,7 +691,7 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
 
     // Send though protocol handler
     //-------------------------
-    var sendBuffer = ProtocolHandler(context, protocolHandlerFactory).send(buffer)
+    var sendBuffer = ProtocolHandler(context, protocolHandlerFactory).send(buffer, context)
 
     // Ensure next user can read from content
     //---------

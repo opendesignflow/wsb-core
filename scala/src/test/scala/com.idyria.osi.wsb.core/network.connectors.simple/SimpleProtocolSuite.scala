@@ -38,7 +38,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         When("Sending on the client handler")
         //------------------
-        var sendResult = clientHandler.send(ByteBuffer.wrap(sendMessage.getBytes))
+        var sendResult = clientHandler.send(ByteBuffer.wrap(sendMessage.getBytes),null)
 
         // Convert to string:
         println("Result: "+new String(sendResult.array()))
@@ -227,7 +227,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         When("Sending a simple XML message through client")
         //--------------------
-        client.send(ByteBuffer.wrap(sendMessage.getBytes))
+        client.send(ByteBuffer.wrap(sendMessage.getBytes),null)
 
         Then("The message should come out of the handler")
         //--------------------------
