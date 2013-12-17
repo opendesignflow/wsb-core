@@ -1,6 +1,10 @@
-
+package com.idyria.osi.wsb.core.message.soap
 
 import com.idyria.osi.ooxoo.model.out.scala._
+import com.idyria.osi.ooxoo.model.producers
+import com.idyria.osi.ooxoo.model.producer
+import com.idyria.osi.ooxoo.model.ModelBuilder
+import com.idyria.osi.ooxoo.core.buffers.datatypes.CDataBuffer
 
 @producers(Array(
     new producer(value=classOf[ScalaProducer])
@@ -46,7 +50,11 @@ object SOAP extends ModelBuilder {
         } 
         
         "env:Reason" is {
-            "env:Text" ofType "string"
+            //"env:Text" ofType "string"
+          "env:Text" is {
+            classType(classOf[CDataBuffer].getCanonicalName())
+            
+          }
         }
         
         // Optional
@@ -58,7 +66,7 @@ object SOAP extends ModelBuilder {
             
             any  
         
-        }
+        } 
         
     
         
