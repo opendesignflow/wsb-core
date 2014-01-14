@@ -517,10 +517,12 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
           } // EOF While has keys
 
         } catch {
-
+        	
+          // Selector has been closed (connector close for example)
           case e: java.nio.channels.ClosedSelectorException =>
-
-            e.printStackTrace()
+          	
+            
+            //e.printStackTrace()
 
           case e: Throwable => throw e
 

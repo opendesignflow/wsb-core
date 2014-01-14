@@ -36,6 +36,10 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
    */
   var direction = AbstractConnector.Direction.Server
 
+  def setClient = direction = AbstractConnector.Direction.Client
+  def setServer = direction = AbstractConnector.Direction.Server
+  
+  
   /**
    * Set to true on stop,  Thread implementation must stop when this is set to true
    */
