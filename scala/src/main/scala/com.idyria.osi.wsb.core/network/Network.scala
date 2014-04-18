@@ -41,7 +41,8 @@ class Network(var engine: WSBEngine) extends Lifecycle {
     //----------------------
     connectors.find { c => c.canHandle(msg) } match {
 
-      // 
+      // SERVER: Connector Exists
+      //-----------------------------------
       case Some(connector) =>
 
         try {
@@ -51,11 +52,11 @@ class Network(var engine: WSBEngine) extends Lifecycle {
             msg(e)
             e.printStackTrace()
         }
+
+      // CLIENT MODE: Try to create a connector for the message in client mode
+      //----------------------
       case None =>
 
-        // Try to create a connector for the message in client mode
-        //----------------------
-        
         // IF the context string does not match client format, this is normal, and will throw an exception
         try {
           ConnectorFactory(msg.networkContext.qualifier) match {
@@ -66,7 +67,7 @@ class Network(var engine: WSBEngine) extends Lifecycle {
               //-------------------
               this.addConnector(connector)
               connector.direction = AbstractConnector.Direction.Client
-              connector.lStart
+              connector.cycleToStart
               connector.waitForStart()
 
               // Send

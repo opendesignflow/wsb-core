@@ -34,8 +34,8 @@ class SOAPMessage extends Envelope with com.idyria.osi.wsb.core.message.Message 
 
   // Initialize default Header and Body
   //-------------------
-  this.header = new Header
-  this.body = new Body
+  //this.header = new Header
+  //this.body = new Body
 
   // Output format
   //-------------------

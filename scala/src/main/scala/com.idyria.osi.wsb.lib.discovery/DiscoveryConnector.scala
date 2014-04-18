@@ -23,6 +23,9 @@ import com.idyria.osi.ooxoo.core.buffers.structural.XList
 import com.idyria.osi.tea.logging.TLog
 import com.idyria.osi.tea.logging.TLogSource
 import com.idyria.osi.tea.listeners.ListeningSupport
+import java.util.Timer
+import java.util.TimerTask
+import com.idyria.osi.wsb.core.network.connectors.tcp.TCPConnector
 
 /**
  * This class only sends a UDP Broadcast discovery SOAP Message when in server mode, and in client waits for this message
@@ -46,7 +49,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
   // Client Filtering
   //--------------------------
-  var discoveredMap = Map[String, (Service,Long)]()
+  var discoveredMap = Map[String, (Service, Long)]()
 
   // BC Message
   //--------------------
@@ -59,10 +62,6 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
   // Run
   //------------
-  override def lStop = {
-    super.lStop
-    //this.interrupt()
-  }
 
   override def run = {
 
@@ -77,6 +76,9 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
         //-- Bind to Catchall address
         // println("Client create socket: ")
         var socket = new DatagramSocket(port, InetAddress.getByName("0.0.0.0"));
+        on("stop") {
+          socket.close()
+        }
 
         while (!this.stopThread) {
 
@@ -88,53 +90,64 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
           var packet = new DatagramPacket(datas, datas.length);
 
           //-- Receive
-          socket.receive(packet);
+          try {
 
-          //-- Got Something
-          var dataString = new String(packet.getData()).trim
-          //println(s"Client got length: ${packet.getLength()} '"+dataString+"'")
+            socket.receive(packet);
 
-          //-- Parse
-          // var soapMessage = Message.apply("soap").get.apply(ByteBuffer.wrap(datas,0,packet.getLength()-1))
-          var soapMessage = Message.apply("soap").get.apply(ByteBuffer.wrap(dataString.getBytes())).asInstanceOf[SOAPMessage]
+            //-- Got Something
+            var dataString = new String(packet.getData()).trim
+            //println(s"Client got length: ${packet.getLength()} '"+dataString+"'")
 
-          //-- Get latest next service discovery updated based on Timeout and timestamp
-          var discovery = soapMessage.body.content(0).asInstanceOf[Discovery]
-          var nextUpdate = discovery.interval.data + System.currentTimeMillis()
-          
-          //-- Try to filter out from hostname+uid and Record in map if necessary
-          //---------------------
-          soapMessage.header.content.collectFirst { case h: Service ⇒ h } match {
+            //-- Parse
+            // var soapMessage = Message.apply("soap").get.apply(ByteBuffer.wrap(datas,0,packet.getLength()-1))
+            var soapMessage = Message.apply("soap").get.apply(ByteBuffer.wrap(dataString.getBytes())).asInstanceOf[SOAPMessage]
 
-            // Found Service
-            //--------------
-            case Some(service) ⇒
+            //-- Get latest next service discovery updated based on Timeout and timestamp
+            var discovery = soapMessage.body.content(0).asInstanceOf[Discovery]
+            var nextUpdate = discovery.interval.data + System.currentTimeMillis()
 
-              // Packet identifier
-              var packetIdentifier = s"${service.uid}@${service.hostname}"
+            //-- Try to filter out from hostname+uid and Record in map if necessary
+            //---------------------
+            soapMessage.header.content.collectFirst { case h: Service ⇒ h } match {
 
-              // Search in map
-              var serviceRecord = discoveredMap.getOrElse(packetIdentifier, {
+              // Found Service
+              //--------------
+              case Some(service) ⇒
 
-                // Not found,send and return for recording 
-                this.network ! soapMessage
+                // Packet identifier
+                var packetIdentifier = s"${service.uid}@${service.hostname}"
 
-                //-- Save
-                discoveredMap = discoveredMap + (packetIdentifier -> (service,nextUpdate))
-                this.@->("service.discovered", service)
-                (service,nextUpdate)
-              })
-              
-              // Update Map Record next update
-              discoveredMap = discoveredMap.updated(packetIdentifier, (serviceRecord._1,nextUpdate))
-              
+                // Search in map
+                var serviceRecord = discoveredMap.getOrElse(packetIdentifier, {
+
+                  // Not found,send and return for recording 
+                  this.network ! soapMessage
+
+                  //-- Save
+                  discoveredMap = discoveredMap + (packetIdentifier -> (service, nextUpdate))
+                  this.@->("service.discovered", service)
+                  (service, nextUpdate)
+                })
+
+                // Update Map Record next update
+                discoveredMap = discoveredMap.updated(packetIdentifier, (serviceRecord._1, nextUpdate))
+
               //serviceRecord = discoveredMap(packetIdentifier)
-             // println(s"Updated next update for ${serviceRecord._1.name} to ${serviceRecord._2}")
+              // println(s"Updated next update for ${serviceRecord._1.name} to ${serviceRecord._2}")
 
-            case _ ⇒
+              case _ ⇒
 
-              // No Service Header found -> fail
-              logWarn(s"Could not receive properly Discovery message as it does not contain any Service header: " + soapMessage.toXMLString)
+                // No Service Header found -> fail
+                logWarn(s"Could not receive properly Discovery message as it does not contain any Service header: " + soapMessage.toXMLString)
+            }
+            // EOF Receive message
+
+          } catch {
+
+            // IN case of IO error, forget about this connection
+            case e: java.io.IOException =>
+
+            case e: Throwable           => throw e
           }
 
         }
@@ -168,8 +181,8 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
           var discovery = new Discovery
           discovery.interval = this.sendIntervalMs
           discovery.timestamp = System.currentTimeMillis()
-          message.body.content+=discovery
-          
+          message.body.content += discovery
+
           //-- Do Send
           bcAddresses.foreach {
             bcA ⇒
@@ -195,10 +208,26 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
           }
 
         }
-      // EOF Thread loop
+        // EOF Thread loop
+
+        // Close
+        bcSocket.close()
 
     }
+    // EOF Server mode
 
+  }
+  
+  //-- Check services timed stuff
+  def startCheckServices = {
+    
+    // Create Daemon timer
+    var timer = new Timer("DiscoveryServicesCheck",true)
+    timer.schedule(new TimerTask() {
+      def run = {
+        checkServices
+      }
+    },0,1000)
   }
 
   // Client Mode
@@ -210,19 +239,50 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
    * @listeningPoint service.expired
    */
   def checkServices {
-    
-    println(s"Checking services")
+
+    logFine(s"Checking services")
     this.discoveredMap.filter {
-      case(identifier,(service,nextUpdate)) => 
+      case (identifier, (service, nextUpdate)) =>
         nextUpdate < System.currentTimeMillis()
     }.foreach {
-      case(identifier,(service,nextUpdate)) =>
-        
-        println(s"Service ${service.name} next update was at $nextUpdate, but now is ${System.currentTimeMillis()}")
-        @->("service.expired",service)
+      case (identifier, (service, nextUpdate)) =>
+
+        logFine(s"Service ${service.name} next update was at $nextUpdate, but now is ${System.currentTimeMillis()}")
+        @->("service.expired", service)
         this.discoveredMap = this.discoveredMap - identifier
     }
+
+  }
+
+  // Add Some services
+  //------------------
+  def addService(name: String): Service = {
+    var service = new Service
+    service.name = name
+    service.hostname = InetAddress.getLocalHost().getHostName()
+    service.uid = getClass.hashCode()
+
+    message.header.content += (service)
+
+    // Add All Connectors in Service Definition services
+    //-----------------
+    /*this.network.connectors.filterNot(_ == this).foreach {
+
+      c ⇒
+
+        var connectorDesc = new Connector
+        connectorDesc.protocolStack = s"${c.protocolType}+${c.messageType}"
+        connectorDesc.connectionString = s"${c.protocolType}+${c.messageType}//${service.hostname}"
+        
+        if(c.isInstanceOf[TCPConnector]) {
+          connectorDesc.connectionString = s"tcp+${connectorDesc.connectionString}:${c.asInstanceOf[TCPConnector].port}"
+        }
+        
+        service.connectors += connectorDesc
+
+    }*/
     
+    service
   }
 
   // Send : No need to send anything
@@ -258,9 +318,9 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
     service.name = serviceName
     service.hostname = InetAddress.getLocalHost().getHostName()
     service.uid = getClass.hashCode()
-   
+
     message.header.content += (service)
-     
+
     // Add All Connectors in Service Definition services
     //-----------------
     this.network.connectors.filterNot(_ == this).foreach {
@@ -269,12 +329,32 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
         var connectorDesc = new Connector
         connectorDesc.protocolStack = s"${c.protocolType}+${c.messageType}"
-
-        service.connectors += connectorDesc
+        connectorDesc.connectionString = s"${c.protocolType}+${c.messageType}//${service.hostname}"
+        
+        if(c.isInstanceOf[TCPConnector]) {
+          connectorDesc.connectionString = s"tcp+${connectorDesc.connectionString}:${c.asInstanceOf[TCPConnector].port}"
+        }
+        
+        message.header.content.collect{ case h : Service => h }.foreach {
+          s => s.connectors += connectorDesc
+        }
+        
 
     }
 
+    // Start Services Check
+    //------------------------
+    startCheckServices
+    
     super.lStart
+  }
+
+  /**
+   * Clean and stop
+   */
+  override def lStop = {
+    super.lStop
+    //this.interrupt()
   }
 
 }
@@ -295,7 +375,7 @@ class DiscoveryMessage extends SOAPMessage {
  */
 @xelement(name = "Discovery")
 class Discovery extends ElementBuffer {
-  
+
   @xattribute
   var interval: LongBuffer = null
 
@@ -313,8 +393,6 @@ class Service extends ElementBuffer {
   @xattribute
   var hostname: XSDStringBuffer = null
 
-  @xattribute
-  var port: IntegerBuffer = null
 
   @xattribute
   var uid: LongBuffer = null
@@ -333,6 +411,10 @@ class Connector extends ElementBuffer {
   @xattribute
   var connectionString: XSDStringBuffer = null
 
+  
+  @xattribute
+  var port: IntegerBuffer = null
+  
 }
 
 

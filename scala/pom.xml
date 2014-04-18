@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.idyria.osi.wsb</groupId>
 	<artifactId>wsb-core</artifactId>
-	<version>3.0.0-RC1</version>
+	<version>3.0.0-RC2-SNAPSHOT</version>
 	<name>WSB Core</name>
 	<parent>
 		<groupId>com.idyria.osi</groupId>
@@ -25,7 +25,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-ooxoo-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.0.1-SNAPSHOT</version>
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>
@@ -128,7 +128,7 @@
 		<dependency>
 			<groupId>com.idyria.osi.ooxoo</groupId>
 			<artifactId>ooxoo-core</artifactId>
-			<version>3.0.0</version>
+			<version>3.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.idyria.osi.tea</groupId>

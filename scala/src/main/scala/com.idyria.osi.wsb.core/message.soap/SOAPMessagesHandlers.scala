@@ -46,8 +46,11 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
                // Payload matches
              	case payload if (payload.getClass == inputCheck._2) =>
              	  
-             	  // Call handler
-             	  closure(m,payload.asInstanceOf[ElementBuffer])
+             	  // Call handler, and generate reponse if not already
+             	  closure(m,payload.asInstanceOf[ElementBuffer]) match {
+             	    case elt : ElementBuffer if(!m.upped) => up(elt, m.networkContext)
+             	    case _ =>
+             	  }
              	  
              	case _ => 
           
@@ -106,7 +109,7 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
     
     // Add to map
     //----------------------
-    println(s"Registering SOAP Message handler: ${(qualifier -> c)} ")
+    logFine(s"Registering SOAP Message handler: ${(qualifier -> c)} ")
     messageHandlers = messageHandlers + ( (qualifier -> c)  -> realClosure)
     
   }

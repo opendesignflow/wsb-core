@@ -29,7 +29,7 @@ class WSAIntermediary extends SOAPIntermediary {
     
     soapMessage => 
    
-      println("[WSA] incoming: "+soapMessage.toXMLString)
+      logFine("[WSA] incoming: "+soapMessage.toXMLString)
       
       //-- Look for Action in header
       //---------
@@ -38,11 +38,11 @@ class WSAIntermediary extends SOAPIntermediary {
           	
           soapMessage.qualifier = action.toString()
         
-          println("WSA action: "+action.toString())
+          logFine("WSA action: "+action.toString())
         
         case h => 
           
-          println("WSA header: "+h)
+          logFine("WSA header: "+h)
       }
       
   }
@@ -74,7 +74,7 @@ class WSAIntermediary extends SOAPIntermediary {
         case _ =>
       }
       
-      println("[WSA] post wsa: "+soap.toXMLString)
+      logFine("[WSA] post wsa: "+soap.toXMLString)
       
   }
  

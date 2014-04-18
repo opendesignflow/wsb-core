@@ -5,6 +5,7 @@ import com.idyria.osi.ooxoo.model.producers
 import com.idyria.osi.ooxoo.model.producer
 import com.idyria.osi.ooxoo.model.ModelBuilder
 import com.idyria.osi.ooxoo.core.buffers.datatypes.CDataBuffer
+import com.idyria.osi.ooxoo.model.Element
 
 @producers(Array(
     new producer(value=classOf[ScalaProducer])
@@ -16,7 +17,7 @@ object SOAP extends ModelBuilder {
     namespace("env" -> "http://www.w3.org/2003/05/soap-envelope")
     parameter("scalaProducer.targetPackage" -> "com.idyria.osi.wsb.core.message.soap")
 
-
+   
     "env:Envelope" is {
 
 
@@ -31,22 +32,32 @@ object SOAP extends ModelBuilder {
             any
 
         }
-
-    }
-    
+  
+    }  
+        
     "env:Fault" is {
         
         "env:Code" is {
             
             "env:Value" enum("VersionMismatch","MustUnderstand","DataEncodingUnknown","Sender","Receiver")
             
-            "env:Subcode" is {
+            var subCode = "env:Subcode" is { }
+            subCode is {
             
                 "env:Value" ofType "string"
                 
-                "env:Subcode" is {
-                }
+                importElement(subCode)
+                //"env:Subcode" is {
+                //}
             }
+            /*var subCode : Element = "env:Subcode" is {
+            
+                "env:Value" ofType "string"
+                
+                importElement(subCode)
+                //"env:Subcode" is {
+                //}
+            }*/
         } 
         
         "env:Reason" is {
@@ -55,6 +66,8 @@ object SOAP extends ModelBuilder {
             classType(classOf[CDataBuffer].getCanonicalName())
             
           }
+          
+          "env:Reason" is {}
         }
         
         // Optional

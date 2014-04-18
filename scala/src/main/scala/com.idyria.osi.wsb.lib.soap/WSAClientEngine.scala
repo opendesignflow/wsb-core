@@ -17,6 +17,7 @@ import com.idyria.osi.wsb.core.message.soap.Fault
 import com.idyria.osi.aib.core.bus.aib
 import com.idyria.osi.wsb.core.WSBEngine
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
+import scala.reflect.ClassTag
 
 /**
  *
@@ -69,24 +70,44 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
   // Send 
   //-------------------
 
+  var currentNetworkID : Option[String] = None
+  
+  import scala.reflect.runtime.universe._
+  import scala.reflect._
+  /**
+   * Send to default selected NetworkID
+   */
+  def send[T <: ElementBuffer, RT <: ElementBuffer : ClassTag ](payload: T)(respClosure: RT => Unit) : Unit = {
+    
+    send(payload,currentNetworkID.get)(respClosure)
+    
+  }
+  
+  
+  
   /**
    * Send a Created SOAP Message with message as payload to the network
    *
    * The provided response closure is consumable and will be removed once the response has been received
    */
-  def send[T <: ElementBuffer, RT <: ElementBuffer](payload: T, networkId: String)(respClosure: RT => Unit) = {
+  def send[T <: ElementBuffer, RT <: ElementBuffer : ClassTag](payload: T, networkId: String)(respClosure: RT => Unit) : Unit = {
 
     // Get Type of response
     //-----------------
-    var closureMethod = respClosure.getClass().getMethods().filter {
+    /*var closureMethod = respClosure.getClass().getMethods().filter {
       m => m.getName() == "apply" && m.getReturnType() == Void.TYPE
     }.head
+    var elementType = (closureMethod.getParameterTypes()(0).asInstanceOf[Class[RT]])*/
 
-    var elementType = (closureMethod.getParameterTypes()(0).asInstanceOf[Class[RT]])
+    var t = classTag[RT]
+    var elementType = t.runtimeClass.asInstanceOf[Class[RT]]
+    
+    
 
     // Register Response closure
     //-------------------
-    responsesHandler.onMessageType(elementType, {
+    if (respClosure!=null) {
+      responsesHandler.onMessageType(elementType, {
       (message, m: RT) =>
 
         try {
@@ -99,6 +120,8 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
         }
 
     })
+    }
+    
 
     // Create Message
     //----------------
@@ -118,6 +141,8 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
 
   }
 
+  def sendAndForget[T <: ElementBuffer, RT <: ElementBuffer : ClassTag](payload: T, networkId: String)  : Unit = (send(payload,networkId)_)(null)
+  
 }
 
 object WSAClientEngine {

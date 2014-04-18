@@ -12,6 +12,7 @@ import com.idyria.osi.wsb.core.network.NetworkContext
 import com.idyria.osi.wsb.core.network.Network
 import com.idyria.osi.wsb.core.network.protocols.simple.SimpleMessageTCPConnector
 import com.idyria.osi.tea.logging.TLogSource
+import com.idyria.osi.tea.listeners.ListeningSupport
 
 /**
  * Base class for Connectors.
@@ -24,7 +25,7 @@ import com.idyria.osi.tea.logging.TLogSource
  * @author rleys
  *
  */
-abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with TLogSource {
+abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with TLogSource with ListeningSupport {
  
   /**
    * Network This Connector is registered under
@@ -101,15 +102,17 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   def lStart = {
 
     this.start()
-
+    @->("stop")
   }
 
   /**
-   * Stop kills thread per default
+   * Stop sets the stopThread class variable to true
+   * @listeningPoint stop
    */
   def lStop = {
 
     this.stopThread = true
+    @->("stop")
 
   }
 

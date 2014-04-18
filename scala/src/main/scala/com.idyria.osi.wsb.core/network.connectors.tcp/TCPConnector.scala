@@ -308,13 +308,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
       @->("server.start")
 
-      logInfo(s"Starting TCP Connector on $port")
+      logInfo[TCPConnector](s"Starting TCP Connector on  $address:$port (${this.messageType})")
 
       // Bind
       //--------------
       this.serverSocket = ServerSocketChannel.open();
       this.serverSocket.bind(new InetSocketAddress(address, port))
 
+      
       // Register Selector for all operations
       // !! Selector only works on non blocking sockets
       //----------------------
@@ -333,7 +334,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
         try {
 
           // Select blocking, will throw an exception if socket is closed
-          logFine(s"-- Waiting for something to happen on selector thread")
+          logFine[TCPConnector](s"-- Waiting for something to happen on selector thread")
           var selected = this.serverSocketSelector.select
 
           var keyIterator = this.serverSocketSelector.selectedKeys.iterator;
@@ -440,7 +441,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
                             m =>
 
                               //println("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
-
+                            	logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
 
@@ -543,7 +544,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
     //------------------------
     else {
 
-      logInfo(s"Starting TCP Connector as client on $address:$port")
+      logInfo[TCPConnector](s"Starting TCP Connector as client on $address:$port")
 
       // Connect
       var addr = new InetSocketAddress(InetAddress.getByName(this.address), this.port)
@@ -552,7 +553,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       } catch {
         case e: Throwable =>
 
-          println(s"Failed connection to ${addr} and port $port, not resolved: ${addr.isUnresolved()}")
+          logError[TCPConnector](s"Failed connection to ${addr} and port $port, not resolved: ${addr.isUnresolved()}")
 
           // Make sure started signal has been given
           @->("common.start.failed")
@@ -563,7 +564,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       this.clientNetworkContext = new TCPNetworkContext(this.clientSocket)
       // this.clientNetworkContext.qualifier = s"server@${this.clientNetworkContext.hashCode}"
 
-      logInfo(s"Client Started")
+      logInfo[TCPConnector](s"Client Started")
 
       @->("client.started")
       @->("common.started")
@@ -598,7 +599,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
                       messages.foreach {
                         m =>
 
-                          println("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
+                          logInfo[TCPConnector]("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
 
                           // Create Message
                           var message = factory(m)

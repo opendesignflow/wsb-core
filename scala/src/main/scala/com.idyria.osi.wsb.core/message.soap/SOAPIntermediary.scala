@@ -3,7 +3,7 @@ package com.idyria.osi.wsb.core.message.soap
 import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.wsb.core.network.NetworkContext
-import com.idyria.osi.wsb.core.message.soap.Text
+
 
 
 
@@ -26,13 +26,12 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
     e => 
     
       
-     // e.printStackTrace()
+      e.printStackTrace()
       
     // Create Fault
     //------------------
     var f = new Fault
-    f.reason = Reason()
-    f.reason.text =  e.getMessage
+    f.reason.text =  s"${e.getClass().getCanonicalName()}:${e.getLocalizedMessage()}"
 
     
     // Add To new SOAPMessage
