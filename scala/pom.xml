@@ -4,6 +4,7 @@
 	<artifactId>wsb-core</artifactId>
 	<version>3.0.0-RC2-SNAPSHOT</version>
 	<name>WSB Core</name>
+	<inceptionYear>2008</inceptionYear>
 	<parent>
 		<groupId>com.idyria.osi</groupId>
 		<artifactId>superpom-scala</artifactId>
@@ -19,6 +20,10 @@
 		<tag>HEAD</tag>
 	</scm>
 
+	<organization>
+        <name>OSI / Computer Architecture Group @ Uni. Heidelberg </name>
+        <url>https://github.com/richnou/wsb-core</url>
+    </organization>
 
 	<build>
 		<plugins>
@@ -53,6 +58,35 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<!-- Licenses -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>1.6</version>
+				<configuration>
+				  <licenseName>gpl_v3</licenseName>
+				  <extraExtensions>
+				    <scala>java</scala>
+				  </extraExtensions>
+				</configuration>
+			</plugin>
+			<!-- Site --> 
+			<plugin>
+			  <groupId>com.github.github</groupId>
+			  <artifactId>site-maven-plugin</artifactId>
+			  <version>0.8</version>
+			  <configuration>
+			    <message>Creating site for ${project.version}</message>
+			  </configuration>
+			  <executions>
+			    <execution>
+			      <goals>
+			        <goal>site</goal>
+			      </goals>
+			      <phase>site</phase>
+			    </execution>
+			  </executions>
 			</plugin>
 		</plugins>
 	</build>
