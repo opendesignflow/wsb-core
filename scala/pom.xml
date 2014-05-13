@@ -20,6 +20,12 @@
 		<tag>HEAD</tag>
 	</scm>
 
+	<!-- Site -->
+    <!-- #### -->
+    <properties>
+        <github.global.server>github</github.global.server>
+    </properties>
+
 	<organization>
         <name>OSI / Computer Architecture Group @ Uni. Heidelberg </name>
         <url>https://github.com/richnou/wsb-core</url>

@@ -166,13 +166,28 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx if (this.direction == AbstractConnector.Direction.Client) =>
+      case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext!=null) =>
+        
+        ctx.qualifier.contains(clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName()+":"+clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
+          case true => true
+          case false => false
+        }
+        
+       /* var NetworkContext.NetworkString(protocol, message, connectionString) = ctx.qualifier
+        
+         println(s"------ Trying to match qualifier ${ctx.qualifier} ($connectionString , $protocol <-> ${this.protocolType}) against this connectors, target host: "+clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName())
+        
+        
         ctx.qualifier match {
 
-          case NetworkContext.NetworkString(protocol, message, connectionString) if (protocol == this.protocolType && message == messageType) => true
+          case NetworkContext.NetworkString(protocol, message, connectionString) if (protocol == this.protocolType && message == messageType) => 
+            
+            println(s"----------------> OK")
+            true
           case _ => false
 
-        }
+        }*/
+        
 
       case _ => false
     }
@@ -463,7 +478,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
                             m =>
 
                               //println("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
-                            	logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
+                            	//logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
 
@@ -519,7 +534,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
                     networkContext.@->("close")
 
-                  case e: Throwable => throw e
+                  case e: Throwable => 
+                    
+                    this.clientsContextsMap -= networkContext.toString
+                    logFine[TCPConnector]("-- An error occured, Closing Connection for: "+networkContext.toString)
+                    e.printStackTrace()
+                    networkContext.@->("close")
+                    
+                    //throw e
 
                 } finally {
 

@@ -28,12 +28,13 @@ import com.idyria.osi.wsb.core._
 import com.idyria.osi.wsb.core.message._
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
+import com.idyria.osi.tea.logging.TLogSource
 
 /**
  * @author rleys
  *
  */
-class Network(var engine: WSBEngine) extends Lifecycle {
+class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
   var connectors = Set[AbstractConnector[_]]()
 
@@ -84,6 +85,8 @@ class Network(var engine: WSBEngine) extends Lifecycle {
 
             case Some(connector) =>
 
+              logFine(s"------ Creating CLIENT connector")
+              
               // Register and Start
               //-------------------
               this.addConnector(connector)
