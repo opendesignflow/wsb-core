@@ -200,7 +200,7 @@ object AbstractConnector {
  */
 trait ConnectorFactory {
 
-  def newInstance(connectionString: String): AbstractConnector[_]
+  def newInstance(connectionString: String): AbstractConnector[_ <: NetworkContext]
 
 }
 
@@ -230,7 +230,7 @@ object ConnectorFactory {
    * - from "+" separated stack, the last one is the message type, so ignore it
    *
    */
-  def apply(contextString: String): Option[AbstractConnector[_]] = {
+  def apply(contextString: String): Option[AbstractConnector[_ <: NetworkContext]] = {
 
     contextString match {
       case NetworkContext.NetworkString(protocol, message, connectionString) ⇒
