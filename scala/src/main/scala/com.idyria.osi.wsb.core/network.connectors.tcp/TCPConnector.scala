@@ -640,10 +640,12 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
                     case Some(factory) =>
 
+                      logInfo[TCPConnector](s"[Client] Parsing messages (${messages.size}) found from protocol ")
                       messages.foreach {
                         m =>
-
-                          logInfo[TCPConnector]("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
+                        
+                          logInfo[TCPConnector](s"[Client] Go")
+                          //logInfo[TCPConnector]("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
 
                           // Create Message
                           var message = factory(m)
@@ -676,6 +678,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
             case readbytes if (readbytes < 0) => {
               this.clientSocket.close();
               continue = false
+              logInfo[TCPConnector](s"[Client] EOF socket")
             }
           }
 
@@ -684,10 +687,13 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
           // In case of I/O Exception, stop
           case e: java.io.IOException =>
             continue = false
+            
+            logInfo[TCPConnector](s"[Client] IOException: "+e.getLocalizedMessage())
 
           // Otherwise let live
           case e: Throwable =>
             continue = false
+            e.printStackTrace()
         }
 
       // EOF Data -> Clean
@@ -717,6 +723,8 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
     handler.availableDatas.size match {
       case size if (size > 0) =>
 
+        logFine[TCPConnector]("Data found after protocol parsing")
+        
         var res = List[T]()
         handler.availableDatas.foreach {
           data => res = res :+ data
@@ -728,7 +736,7 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
         Option(res)
 
       case _ =>
-
+        logFine[TCPConnector]("No data found after protocol parsing")
         None
     }
 

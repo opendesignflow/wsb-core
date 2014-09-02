@@ -61,14 +61,14 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
         msg match {
           case m : UpMessage => 
             
-            logFine("received Message to up") 
+            logFine[MessageBroker]("received Message to up") 
             
             brokeringTree.up(msg)
             
           case _ => 
             
-            logFine("Broker Got Down Message: "+msg.getClass) 
-            logFine("-> Qualifier "+msg.qualifier) 
+            logFine[MessageBroker]("Broker Got Down Message: "+msg.getClass) 
+            logFine[MessageBroker]("-> Qualifier "+msg.qualifier) 
             brokeringTree.down(msg) 
         }
         

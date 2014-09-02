@@ -227,8 +227,9 @@ object ConnectorFactory {
    * From context string:
    *
    * - take part before "://"
-   * - from "+" separated stack, the last one is the message type, so ignore it
-   *
+   * - from "+" separated stack:
+   *    - We need two components: low level + protocol
+   *    - If more than two, the last one is the message type, so ignore it
    */
   def apply(contextString: String): Option[AbstractConnector[_ <: NetworkContext]] = {
 

@@ -77,7 +77,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
       // CLIENT MODE: Try to create a connector for the message in client mode
       //----------------------
-      case None =>
+      case None if (msg.networkContext != null) =>
 
         // IF the context string does not match client format, this is normal, and will throw an exception
         try {
@@ -86,7 +86,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
             case Some(connector) =>
 
               logFine(s"------ Creating CLIENT connector")
-              
+
               // Register and Start
               //-------------------
               this.addConnector(connector)
@@ -107,6 +107,11 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
             e.printStackTrace()
         }
 
+      // Client: Message without Network Content
+      //----------------------
+      case None => 
+        throw new RuntimeException("Cannot send message because no network context was provided")
+        
     }
 
     //
