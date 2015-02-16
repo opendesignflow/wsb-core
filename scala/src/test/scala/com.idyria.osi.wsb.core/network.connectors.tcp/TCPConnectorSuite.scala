@@ -281,7 +281,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                 def protocolSendData(buffer : ByteBuffer,context: TCPNetworkContext)  : ByteBuffer = {
 
                     // Send
-                    context.socket.write(buffer)
+                    context.socketChannel.write(buffer)
 
                     //buffer.clear
                     //println("Server send something: "+new String(buffer.array))
@@ -312,7 +312,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
                     sendLine = Charset.forName("UTF-8").decode(buffer).toString
 
                     // Send
-                    context.socket.write(ByteBuffer.wrap(sendLine.getBytes))
+                    context.socketChannel.write(ByteBuffer.wrap(sendLine.getBytes))
 
                     //println("Client send some datas: "+sendLine)
 

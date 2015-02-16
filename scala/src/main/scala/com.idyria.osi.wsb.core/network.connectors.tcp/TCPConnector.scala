@@ -16,6 +16,7 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import java.net.SocketOption
+import java.net.Socket
 
 /**
  *
@@ -25,7 +26,7 @@ import java.net.SocketOption
  *
  *
  */
-abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
+abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
 
   /**
    * Connection address
@@ -95,7 +96,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
         var resBuffer = protocolSendData(buffer, this.clientNetworkContext)
 
         //-- Send
-        this.clientNetworkContext.socket.write(resBuffer)
+        this.clientNetworkContext.socketChannel.write(resBuffer)
 
       case AbstractConnector.Direction.Server =>
 
@@ -104,7 +105,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
         //-- Send
         while (resBuffer.remaining != 0)
-          context.socket.write(resBuffer)
+          context.socketChannel.write(resBuffer)
 
     }
 
@@ -168,7 +169,7 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
       // Client, host and port must match this one
       case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext!=null) =>
         
-        ctx.qualifier.contains(clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName()+":"+clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
+        ctx.qualifier.contains(clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName()+":"+clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
           case true => true
           case false => false
         }
@@ -325,6 +326,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
     started.release(Integer.MAX_VALUE)
   }
+  
+  /**
+   * Create SSL connector
+   */
+  def buildServerSocketChannel : ServerSocketChannel = {
+    
+    ServerSocketChannel.open();
+  }
 
   /**
    * Start this connector in Listening mode if in SERVER direction,
@@ -345,11 +354,11 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
 
       @->("server.start")
 
-      logInfo[TCPConnector](s"Starting TCP Connector on  $address:$port (${this.messageType})")
+      logInfo[TCPConnector](s"Starting TCP Connector on $address:$port (${this.messageType})")
 
       // Bind
       //--------------
-      this.serverSocket = ServerSocketChannel.open();
+      this.serverSocket = buildServerSocketChannel
       this.serverSocket.bind(new InetSocketAddress(address, port))
 
       
@@ -371,8 +380,9 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
         try {
 
           // Select blocking, will throw an exception if socket is closed
-          logFine[TCPConnector](s"-- Waiting for something to happen on selector thread")
+          logFine[TCPConnector](s"-- Waiting for something to happen on selector thread $address:$port")
           var selected = this.serverSocketSelector.select
+          logFine[TCPConnector](s"--  Something happened")
 
           var keyIterator = this.serverSocketSelector.selectedKeys.iterator;
           while (keyIterator.hasNext) {
@@ -380,33 +390,48 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
             var key = keyIterator.next();
             key match {
 
+              //-- Ignores
+              case key if (!key.isValid()) => 
+              
               // Accept
               //--------------------
               case key if (key.isValid && key.isAcceptable) => {
 
-                logFine[TCPConnector]("-- Accepting Connection")
+                logFine[TCPConnector]("-- Accepting Connection on $address:$port ")
 
                 var clientSocket = serverSocket.accept
 
                 // Prepare Network Context
                 //----------------------------
-                var networkContext = new TCPNetworkContext(clientSocket)
-                networkContext.qualifier = s"client@${networkContext.hashCode}"
-                clientsContextsMap += (networkContext.toString -> networkContext)
-
-                @->("server.accepted")
-                @->("server.accepted", networkContext)
-
-                // Register Socket Channel to selector
-                // !! Selector only works on non blocking sockets
-                //-----------------
-                clientSocket.configureBlocking(false);
-                var clientSocketKey = clientSocket.register(this.serverSocketSelector, SelectionKey.OP_READ, SelectionKey.OP_WRITE)
-
-                //-- Register NetworkContext with key
-                clientSocketKey.attach(networkContext)
-
-                keyIterator.remove
+                try {
+                  var networkContext = 
+                    new TCPNetworkContext(clientSocket)
+                  
+                  networkContext.qualifier = s"client@${networkContext.hashCode}"
+                  clientsContextsMap += (networkContext.toString -> networkContext)
+  
+                  @->("server.accepted")
+                  @->("server.accepted", networkContext)
+  
+                  // Register Socket Channel to selector
+                  // !! Selector only works on non blocking sockets
+                  //-----------------
+                  clientSocket.configureBlocking(false);
+                  var clientSocketKey = clientSocket.register(this.serverSocketSelector, SelectionKey.OP_READ, SelectionKey.OP_WRITE)
+  
+                  //-- Register NetworkContext with key
+                  clientSocketKey.attach(networkContext)
+                  keyIterator.remove
+                  
+                } catch {
+                  // Error while accepting connection -> live on
+                  case e : Throwable => 
+                    e.printStackTrace()
+                    key.cancel()
+                    keyIterator.remove
+                }
+                
+                //keyIterator.remove
 
               }
 
@@ -417,11 +442,11 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
                 @->("server.read")
                 keyIterator.remove
 
-                logFine[TCPConnector]("-- Got Read key")
+                logFine[TCPConnector]("-- Got Read key on $address:$port ")
 
                 //-- Take Channel
                 var networkContext = key.attachment().asInstanceOf[TCPNetworkContext]
-                var socketChannel = networkContext.socket
+                var socketChannel = networkContext.socketChannel
 
                 var readBuffer = ByteBuffer.allocate(4096) // (Buffer of a page size per default)
 
@@ -520,7 +545,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
                       networkContext.@->("close")
                       this.clientsContextsMap -= networkContext.toString
                       socketChannel.close();
+                      
+                      // Cancel key
+                      key.cancel()
                       //continue = false
+                      
+                      // FIXME Remove from selector!!!!!
+                     
+                      //keyIterator.remove
                     }
                   }
                   //}
@@ -552,12 +584,14 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
               // Fall back
               //----------------
               case key => {
-                keyIterator.remove
+                
+                logFine[TCPConnector]("-- Don't know what to do with the key")
+                //keyIterator.remove
               }
 
             }
             // EOF Key matched
-
+         
             logFine("-- EOF Keys Looop")
           } // EOF While has keys
 
@@ -567,9 +601,12 @@ abstract class TCPConnector() extends AbstractConnector[TCPNetworkContext] with 
           case e: java.nio.channels.ClosedSelectorException =>
           	
             
-            //e.printStackTrace()
+            e.printStackTrace()
 
-          case e: Throwable => throw e
+          case e: Throwable => 
+            
+            e.printStackTrace()
+            throw e
 
         }
 
@@ -736,7 +773,66 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
         Option(res)
 
       case _ =>
-        logFine[TCPConnector]("No data found after protocol parsing")
+        logFine[TCPConnector](s"No data found after protocol parsing on $address:$port ")
+        logFine[TCPConnector](s" --> No data found after protocol parsing on $address:$port ")
+        None
+    }
+
+  }
+
+  def protocolSendData(buffer: ByteBuffer, context: TCPNetworkContext): ByteBuffer = {
+
+    // Send though protocol handler
+    //-------------------------
+    var sendBuffer = ProtocolHandler(context, protocolHandlerFactory).send(buffer, context)
+
+    // Ensure next user can read from content
+    //---------
+    // println(s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
+    sendBuffer.remaining match {
+      case 0 =>
+        //        println("...so now fliping")
+        sendBuffer.flip.asInstanceOf[ByteBuffer]
+      case _ =>
+        sendBuffer
+    }
+
+  }
+
+}
+
+/**
+ * This class is an implementation of TCPConnector, handing out application protocol management to a Protocolhandler class
+ *
+ */
+abstract class SSLTCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNetworkContext => ProtocolHandler[T])) extends SSLTCPConnector {
+
+  // Protocol Implementation
+  //----------------
+  def protocolReceiveData(buffer: ByteBuffer, context: TCPNetworkContext): Option[Iterable[Any]] = {
+
+    // Receive through Protocol handler
+    //---------------
+    var handler = ProtocolHandler(context, protocolHandlerFactory)
+    handler.receive(buffer)
+    handler.availableDatas.size match {
+      case size if (size > 0) =>
+
+        logFine[TCPConnector]("Data found after protocol parsing")
+        
+        var res = List[T]()
+        handler.availableDatas.foreach {
+          data => res = res :+ data
+        }
+
+        @->("protocol.receive.endOfData")
+        handler.availableDatas.clear
+
+        Option(res)
+
+      case _ =>
+        logFine[TCPConnector](s"No data found after protocol parsing on $address:$port ")
+        logFine[TCPConnector](s" --> No data found after protocol parsing on $address:$port ")
         None
     }
 
@@ -769,15 +865,34 @@ class TCPNetworkContext(q: String) extends NetworkContext {
 
   this.qualifier = q
 
-  var socket: SocketChannel = null
+  var socket: Socket = null
+  var socketChannel: SocketChannel = null
 
-  def this(so: SocketChannel) = {
+   def this(so: SocketChannel) = {
     this(so.getRemoteAddress().toString())
-    socket = so
+    socketChannel = so
     so.getRemoteAddress() match {
+      case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
+      case _                              =>
+    }
+  }
+  
+  def this(so: Socket) = {
+    this(so.getInetAddress.toString())
+    socket = so
+    so.getInetAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
       case _                              =>
     }
 
   }
+  
+  def getLocalHostName = {
+    socket.getLocalAddress.asInstanceOf[InetSocketAddress].getHostName
+  }
+  
+  def getLocalPort = {
+    socket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort
+  }
+  
 }
