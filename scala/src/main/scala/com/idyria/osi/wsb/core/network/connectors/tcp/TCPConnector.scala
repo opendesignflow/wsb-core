@@ -606,11 +606,11 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           case e: java.nio.channels.ClosedSelectorException =>
           	
             
-            e.printStackTrace()
+            //e.printStackTrace()
 
           case e: Throwable => 
             
-            e.printStackTrace()
+            //e.printStackTrace()
             throw e
 
         }

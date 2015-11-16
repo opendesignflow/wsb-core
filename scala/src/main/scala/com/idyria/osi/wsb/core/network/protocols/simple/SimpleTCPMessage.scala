@@ -43,7 +43,8 @@ import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
 class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer]( ctx => new SimpleProtocolHandler(ctx) ) {
 
   
-
+  this.protocolType="tcp"
+  this.messageType="simple"
  
 
 }
@@ -66,6 +67,7 @@ object SimpleMessageTCPConnector extends ConnectorFactory {
     
     //-- Create
     //------------
+    println(s"Creating Simple TCP connection with $host , $port")
     var connector = new SimpleMessageTCPConnector
     connector.address = host
     port match {
