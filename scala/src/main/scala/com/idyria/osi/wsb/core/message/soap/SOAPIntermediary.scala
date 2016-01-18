@@ -52,7 +52,8 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
     // Create Fault
     //------------------
     var f = new Fault
-    f.reason.text =  s"${e.getClass().getCanonicalName()}:${e.getLocalizedMessage()}"
+    f.reason.text = FaultReasonText()
+    f.reason.text.data =  s"${e.getClass().getCanonicalName()}:${e.getLocalizedMessage()}"
 
     
     // Add To new SOAPMessage
