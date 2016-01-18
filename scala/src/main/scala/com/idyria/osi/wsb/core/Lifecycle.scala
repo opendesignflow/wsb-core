@@ -63,29 +63,29 @@ trait Lifecycle {
 
     (this.state, targetState) match {
 
-      case ("none", "init") ⇒
+      case ("none", "init") =>
 
         this.lInit
         this.state = "init"
 
       // Start
-      case (actual, "start") if (actual!="start") ⇒
+      case (actual, "start") if (actual!="start") =>
 
         cycleTo("init")
         this.lStart
         this.state = "start"
 
       // Stop
-      case ("start", "stop") ⇒
+      case ("start", "stop") =>
 
         this.lStop
         this.state = "stop"
 
-      case (_, "stop") ⇒ throw new RuntimeException("Can only cycle to stop from start")
+      case (_, "stop") => throw new RuntimeException("Can only cycle to stop from start")
       
       
       // Ignore
-      case _           ⇒
+      case _           =>
 
     }
 

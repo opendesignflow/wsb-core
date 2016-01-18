@@ -77,7 +77,7 @@ class SOAPMessage extends Envelope with com.idyria.osi.wsb.core.message.Message 
     // Streamout
     //--------------
     this.streamOut {
-      du ⇒
+      du =>
         du("prefixes" -> Map(("http://www.w3.org/2003/05/soap-envelope" -> "env")))
         du
     }
@@ -100,7 +100,7 @@ class SOAPMessage extends Envelope with com.idyria.osi.wsb.core.message.Message 
         // Streamout
         //--------------
         this.streamOut {
-          du ⇒
+          du =>
             du("prefixes" -> Map(("http://www.w3.org/2003/05/soap-envelope" -> "env")))
             du
         }
@@ -119,7 +119,7 @@ class SOAPMessage extends Envelope with com.idyria.osi.wsb.core.message.Message 
         // Streamout
         //--------------
         this.streamOut {
-          du ⇒
+          du =>
             du("prefixes" -> Map(("http://www.w3.org/2003/05/soap-envelope" -> "env")))
             du
         }
@@ -148,7 +148,7 @@ class JSONSOAPMessage extends SOAPMessage {
     // Streamout
     //--------------
     this.streamOut {
-      du ⇒
+      du =>
         du("prefixes" -> Map(("http://www.w3.org/2003/05/soap-envelope" -> "env")))
         du
     }
@@ -166,7 +166,7 @@ object JSONSOAPMessage extends MessageFactory {
   def apply(data: Any): JSONSOAPMessage = {
 
     data match {
-      case str: String ⇒
+      case str: String =>
 
         var msg = new JSONSOAPMessage
         msg - new JsonIO(new StringReader(str))
@@ -182,7 +182,7 @@ object JSONSOAPMessage extends MessageFactory {
         msg.lastBuffer.streamIn
         msg
 
-      case _ ⇒ throw new RuntimeException(s"Cannot not build JSon SOAP Message from unsupported data source: " + data.getClass)
+      case _ => throw new RuntimeException(s"Cannot not build JSon SOAP Message from unsupported data source: " + data.getClass)
     }
 
   }
@@ -199,13 +199,13 @@ object SOAPMessage extends MessageFactory {
   def apply(data: Any): SOAPMessage = {
 
     data match {
-      case buffer: ByteBuffer ⇒
+      case buffer: ByteBuffer =>
 
         var msg = new SOAPMessage
         msg - new StAXIOBuffer(new ByteArrayInputStream(buffer.array()))
         msg.lastBuffer.streamIn
         msg
-      case _ ⇒ throw new RuntimeException(s"Cannot not build SOAP Message from Something else than a ByteBuffer ")
+      case _ => throw new RuntimeException(s"Cannot not build SOAP Message from Something else than a ByteBuffer ")
     }
 
   }

@@ -151,17 +151,17 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
     timeoutMs match {
 
       // No timeout
-      case t if (t <= 0) ⇒
+      case t if (t <= 0) =>
 
         this.started.acquire()
         this.started.release()
 
       // Timeout 
-      case t ⇒
+      case t =>
         this.started.tryAcquire(1, timeoutMs, TimeUnit.MILLISECONDS) match {
-          case true ⇒
+          case true =>
             this.started.release()
-          case false ⇒
+          case false =>
             throw new RuntimeException(s"Connector start wait timed out (waited $timeoutMs ms)")
         }
 
@@ -234,16 +234,16 @@ object ConnectorFactory {
   def apply(contextString: String): Option[AbstractConnector[_ <: NetworkContext]] = {
 
     contextString match {
-      case NetworkContext.NetworkString(protocol, message, connectionString) ⇒
+      case NetworkContext.NetworkString(protocol, message, connectionString) =>
 
         // Search
         //------------------
         this.factories.get(protocol) match {
-          case None ⇒
+          case None =>
 
             throw new RuntimeException(s"Could not find any Connector for protocol stack: $protocol")
 
-          case Some(connectorFactory) ⇒
+          case Some(connectorFactory) =>
 
             // Build
             var connector = connectorFactory.newInstance(connectionString)
@@ -254,7 +254,7 @@ object ConnectorFactory {
             Some(connector)
         }
 
-      case _ ⇒ throw new RuntimeException(s"Context string does not match format: $contextString")
+      case _ => throw new RuntimeException(s"Context string does not match format: $contextString")
     }
 
   }

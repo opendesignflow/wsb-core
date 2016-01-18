@@ -89,7 +89,7 @@ class XMLRPCTest extends FunSuite {
     expectResult(classOf[Array[Byte]])(mc.params.param(6).value.toType)
 
     // All previous 7 tests in one line
-    expectResult(true)(mc.params.param.map(m ⇒ m.value.toType) == List(classOf[Int], classOf[Int], classOf[Boolean], classOf[Double], classOf[String], classOf[String], classOf[Array[Byte]]))
+    expectResult(true)(mc.params.param.map(m => m.value.toType) == List(classOf[Int], classOf[Int], classOf[Boolean], classOf[Double], classOf[String], classOf[String], classOf[Array[Byte]]))
 
   }
 

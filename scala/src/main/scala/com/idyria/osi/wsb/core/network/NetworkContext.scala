@@ -52,8 +52,8 @@ class NetworkContext extends ListeningSupport {
   var qualifier: String = null
 
   override def toString: String = qualifier match {
-    case null ⇒ qualifier.toString
-    case _    ⇒ qualifier
+    case null => qualifier.toString
+    case _    => qualifier
   }
 
 }
@@ -88,8 +88,8 @@ object NetworkContext {
     def unapply(str: String): Option[(String, String, String)] = {
 
       """(?:(.*)\+)?(.+)://(.*)""".r.findFirstMatchIn(str) match {
-        case Some(m) ⇒ Some(m.group(1), m.group(2), m.group(3))
-        case None    ⇒ None
+        case Some(m) => Some(m.group(1), m.group(2), m.group(3))
+        case None    => None
       }
 
     }

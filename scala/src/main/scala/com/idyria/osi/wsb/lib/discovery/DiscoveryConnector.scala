@@ -1,3 +1,24 @@
+/*
+ * #%L
+ * WSB Core
+ * %%
+ * Copyright (C) 2008 - 2014 OSI / Computer Architecture Group @ Uni. Heidelberg
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
 package com.idyria.osi.wsb.lib.discovery
 
 import java.net.InetAddress
@@ -69,35 +90,15 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
       // Client -> Try to receive UDP info
       //--------------
-      case AbstractConnector.Direction.Client ⇒
+      case AbstractConnector.Direction.Client =>
 
         //-- Record already seen Discovered instances to avoid repeating
 
         //-- Bind to Catchall address
         // println("Client create socket: ")
-        var socket = new DatagramSocket(port, InetAddress.getByName("0.0.0.0"));
+        var socket = new DatagramSocket(port, InetAddress.getByName("0.0.0.0"))
 
-/*
- * #%L
- * WSB Core
- * %%
- * Copyright (C) 2008 - 2014 OSI / Computer Architecture Group @ Uni. Heidelberg
- * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
- * <http://www.gnu.org/licenses/gpl-3.0.html>.
- * #L%
- */
+
         on("stop") {
           socket.close()
         }
@@ -130,11 +131,11 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
             //-- Try to filter out from hostname+uid and Record in map if necessary
             //---------------------
-            soapMessage.header.content.collectFirst { case h: Service ⇒ h } match {
+            soapMessage.header.content.collectFirst { case h: Service => h } match {
 
               // Found Service
               //--------------
-              case Some(service) ⇒
+              case Some(service) =>
 
                 // Packet identifier
                 var packetIdentifier = s"${service.uid}@${service.hostname}"
@@ -157,7 +158,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
               //serviceRecord = discoveredMap(packetIdentifier)
               // println(s"Updated next update for ${serviceRecord._1.name} to ${serviceRecord._2}")
 
-              case _ ⇒
+              case _ =>
 
                 // No Service Header found -> fail
                 logWarn(s"Could not receive properly Discovery message as it does not contain any Service header: " + soapMessage.toXMLString)
@@ -176,14 +177,14 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
       // Server -> Send stuff
       //----------------
-      case AbstractConnector.Direction.Server ⇒
+      case AbstractConnector.Direction.Server =>
 
         //-- Get Address for official hostname
         var addresses = InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())
 
         //-- Send for all of them
         var bcAddresses = addresses.map {
-          a ⇒
+          a =>
 
             var addrComponents = a.getHostAddress.split("""\.""")
             addrComponents.update(3, "255")
@@ -207,7 +208,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
 
           //-- Do Send
           bcAddresses.foreach {
-            bcA ⇒
+            bcA =>
               //println(s"BCAddress: $bcA")
 
               //-- Create Message
@@ -226,7 +227,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
           try {
             Thread.sleep(sendIntervalMs)
           } catch {
-            case e: Throwable ⇒ e.printStackTrace()
+            case e: Throwable => e.printStackTrace()
           }
 
         }
@@ -290,7 +291,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
     //-----------------
     /*this.network.connectors.filterNot(_ == this).foreach {
 
-      c ⇒
+      c =>
 
         var connectorDesc = new Connector
         connectorDesc.protocolStack = s"${c.protocolType}+${c.messageType}"
@@ -347,7 +348,7 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
     //-----------------
     this.network.connectors.filterNot(_ == this).foreach {
 
-      c ⇒
+      c =>
 
         var connectorDesc = new Connector
         connectorDesc.protocolStack = s"${c.protocolType}+${c.messageType}"
