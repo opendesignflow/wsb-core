@@ -24,11 +24,13 @@
  */
 package com.idyria.osi.wsb.core.broker.tree
 
+import com.idyria.osi.wsb.core.message.Message
+
 /**
  * @author rleys
  *
  */
-class BrokeringTree extends Intermediary {
+class BrokeringTree extends Intermediary[Message] {
   
     
 

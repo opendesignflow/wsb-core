@@ -37,7 +37,7 @@ import scala.reflect.ClassTag
  * @author rleys
  *
  */
-trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
+trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with ListeningSupport {
 
   /**
    * A Name for user/api to formally identify the intermediary
@@ -52,12 +52,12 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   var filter: Regex = """.*""".r
 
   @xelement
-  var intermediaries: XList[Intermediary] = XList[Intermediary] { new Intermediary {} }
+  var intermediaries: XList[Intermediary[MT]] = XList[Intermediary[MT]] { new Intermediary[MT] {} }
 
   /**
-   * A parent Intermediary if defined, mainly for up operation
+   * A parent Intermediary[MT] if defined, mainly for up operation
    */
-  var parentIntermediary: Intermediary = null
+  var parentIntermediary: Intermediary[MT] = null
 
   // Up/ Down closures for user processing
   // -- The Closures are stored in a list of closures that all must return true for the message to be accepted
@@ -66,15 +66,15 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   /**
    * Per default always accept message
    */
-  var acceptDownClosures: List[Message => Boolean] = List({ m => true })
+  var acceptDownClosures: List[MT => Boolean] = List({ m => true })
 
   /**
    * Define the Closure used to accept a messagein the down direction
    *
    */
-  def acceptDown(cl: Message => Boolean) = acceptDownClosures = acceptDownClosures :+ cl
+  def acceptDown(cl: MT => Boolean) = acceptDownClosures = acceptDownClosures :+ cl
 
-  var downClosure: (Message => Unit) = null
+  var downClosure: (MT => Unit) = null
 
   /**
    * Per default always accept message
@@ -96,7 +96,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    * that add some default message processing, to avoid the user having to know where the start is located
    *
    */
-  var upStart: Intermediary = null
+  var upStart: Intermediary[MT] = null
 
   // Up/Down runtime
   //---------------
@@ -104,7 +104,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   /**
    * Run message on the subtree of current intermediary
    */
-  final def downTree(message: Message): Unit = {
+  final def downTree(message: MT): Unit = {
     // Pass to children if closure did not throw anything out
     try {
       this.intermediaries.foreach {
@@ -116,9 +116,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }
 
   }
-  final def down(message: Message): Unit = {
+  final def down(message: MT): Unit = {
 
-    //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Down] Intermediary[MT] with filter: $filter with message: ${message.qualifier}")
 
     // Ignore message if pattern does not apply
     //--------------
@@ -202,15 +202,15 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
       upClosure match {
         case null =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
+          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary[MT] ${name} no Up closure")
 
         case closure if (acceptUpClosures.forall(_(message)) == false) =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary[MT] ${name} with filter: $filter with message: ${message.qualifier}")
 
         case closure =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary[MT] ${name} with filter: $filter with message: ${message.qualifier}")
 
           closure(message)
       }
@@ -225,7 +225,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
     }
 
-    //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Up] Intermediary[MT] with filter: $filter with message: ${message.qualifier}")
 
   }
 
@@ -254,7 +254,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    *
    * @return The added intermediary for nicer api usage
    */
-  def <=(intermediary: Intermediary): Intermediary = {
+  def <=(intermediary: Intermediary[MT]): Intermediary[MT] = {
 
     intermediaries += intermediary
     intermediary.parentIntermediary = this
@@ -267,9 +267,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    *
    * @return The added intermediary for nicer api usage
    */
-  def prepend(intermediary: Intermediary): Intermediary = {
+  def prepend(intermediary: Intermediary[MT]): Intermediary[MT] = {
 
-    var newIn = XList[Intermediary] { new Intermediary {} }
+    var newIn = XList[Intermediary[MT]] { new Intermediary[MT] {} }
     newIn += intermediary
     intermediary.parentIntermediary = this
     intermediaries.foreach(newIn += _)
@@ -283,9 +283,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    *
    * @return The removed intermediary for nicer api usage
    */
-  def -=(intermediary: Intermediary): Intermediary = {
+  def -=(intermediary: Intermediary[MT]): Intermediary[MT] = {
 
-    var newIn = XList[Intermediary] { new Intermediary {} }
+    var newIn = XList[Intermediary[MT]] { new Intermediary[MT] {} }
     intermediaries.filterNot { _ == intermediary }.foreach(newIn += _)
     intermediaries = newIn
 
@@ -322,10 +322,10 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   /**
    * Search first parent matching the provided function
    */
-  def findParent(cl: Intermediary => Boolean): Option[Intermediary] = {
+  def findParent(cl: Intermediary[MT] => Boolean): Option[Intermediary[MT]] = {
 
     var current = this.parentIntermediary
-    var res: Option[Intermediary] = None
+    var res: Option[Intermediary[MT]] = None
     while (current != null && res == None) {
 
       //-- Try to match
@@ -343,7 +343,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
   }
 
-  def findParentOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
+  def findParentOfType[T <: Intermediary[MT]](implicit tag: ClassTag[T]): Option[T] = {
 
     this.findParent { p => 
       

@@ -69,7 +69,7 @@ class WSAIntermediary extends SOAPIntermediary {
   }
   
   this.onUpMessage {
-    soap => 
+    soap : SOAPMessage =>  
       
       // Add/Update Action in Header from qualifier
       //---------------------------------

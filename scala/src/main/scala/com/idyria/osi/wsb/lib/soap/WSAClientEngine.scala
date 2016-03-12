@@ -67,11 +67,11 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
   //-- Add WSA
   //------------------
   var wsaIntermediary = new WSAIntermediary
-  this.engine.broker <= wsaIntermediary
+ /* this.engine.broker <= wsaIntermediary
   this.engine.broker.brokeringTree.upStart = wsaIntermediary
 
   //-- Intermediary add directly through engine shortcuts to wsaIntermediary
-  def <=(int: Intermediary) = wsaIntermediary <= int
+  def <=(int: Intermediary[_]) = wsaIntermediary <= int*/
 
   //-- Add  SOAPMessage Intermerdiary for responses
   //------------------------
@@ -86,7 +86,7 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
     }
 
   }
-  this <= responsesHandler
+  //this <= responsesHandler
 
   // Send 
   //-------------------

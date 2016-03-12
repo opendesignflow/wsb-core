@@ -32,12 +32,12 @@ import com.idyria.osi.wsb.core.message.Message
  * 
  * 
  */
-trait MessageIntermediary[MT <: Message] extends Intermediary {
+trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
  
   
   // Message closure
-  var messageDownClosure : ( MT => Unit) = { m => }
-  var messageUpClosure : ( MT => Unit) = { m => }
+  var messageDownClosures = List[MT => Unit]()
+  var messageUpClosures = List[Message => Unit]()
   
   // Error closure
   var errorClosure : (Throwable => Unit) = { e => throw e}
@@ -47,8 +47,8 @@ trait MessageIntermediary[MT <: Message] extends Intermediary {
   
   def messageType : Class[MT]
   
-  def onDownMessage(cl: MT => Unit) = this.messageDownClosure = cl
-  def onUpMessage(cl: MT => Unit) = this.messageUpClosure = cl
+  def onDownMessage(cl: MT => Unit) = this.messageDownClosures = messageDownClosures :+ cl
+  def onUpMessage[T <: Message](cl: T => Unit) = this.messageUpClosures = messageUpClosures :+ cl.asInstanceOf[Message => Unit]
   
   def onError(cl: Throwable => Unit) = this.errorClosure=cl
   
@@ -67,7 +67,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary {
     m => 
     
       try {
-    	  messageDownClosure(m.asInstanceOf[MT])
+    	  messageDownClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e : ResponseException => throw e
         case e : Throwable => this.errorClosure(e)
@@ -81,7 +81,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary {
     m => 
     
       try {
-    	  messageUpClosure(m.asInstanceOf[MT])
+    	  messageUpClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e : ResponseException => throw e
         case e : Throwable => this.errorClosure(e)
