@@ -44,7 +44,7 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
   //---------------------
   onError {
     
-    e => 
+    (m,e) => 
     
       
       e.printStackTrace()
@@ -64,13 +64,13 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
       
     // Return
     //------------------
-    super.response(resp)
+    super.response(resp,m)
     
   }
   
   // Response
   //----------------
-  def response(payload: ElementBuffer) = {
+  def response(payload: ElementBuffer,sourceMessage:SOAPMessage) = {
     
     // Add To new SOAPMessage
     //-------------
@@ -84,7 +84,7 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
     
     // Return
     //------------------
-    super.response(resp)
+    super.response(resp,sourceMessage)
     
   }
   

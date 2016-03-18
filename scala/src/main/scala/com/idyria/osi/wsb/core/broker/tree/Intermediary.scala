@@ -142,15 +142,6 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
             } catch {
               case e: ResponseException =>
 
-                // Copy context
-                e.responseMessage.networkContext = message.networkContext
-
-                // Set related message
-                e.responseMessage.relatedMessage = message
-
-                // Up :)
-                up(e.responseMessage)
-
               //throw e
 
               // In case of error, record to message
@@ -237,14 +228,22 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    */
   def response(responseMessage: Message, sourceMessage: Message): Unit = {
 
-    throw new ResponseException(responseMessage)
+    //throw new ResponseException(responseMessage)
+    // Copy context
+    responseMessage.networkContext = sourceMessage.networkContext
+
+    // Set related message
+    responseMessage.relatedMessage = sourceMessage
+
+    // Up :)
+    up(responseMessage)
 
   }
-  def response(responseMessage: Message): Unit = {
+  /*def response(responseMessage: Message): Unit = {
+    
+    //throw new ResponseException(responseMessage)
 
-    throw new ResponseException(responseMessage)
-
-  }
+  }*/
 
   // Language
   //-------------------
@@ -263,7 +262,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   }
 
   /**
-   * Add an intermediary to this current intermediary
+   * Add an intermediary to this current intermediary as first child
    *
    * @return The added intermediary for nicer api usage
    */
@@ -345,10 +344,11 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
 
   def findParentOfType[T <: Intermediary[MT]](implicit tag: ClassTag[T]): Option[T] = {
 
-    this.findParent { p => 
-      
-     // println(s"Parent type search testing: ${p.getClass.getCanonicalName} against ${}")
-      tag.runtimeClass.isAssignableFrom(p.getClass) }.asInstanceOf[Option[T]]
+    this.findParent { p =>
+
+      // println(s"Parent type search testing: ${p.getClass.getCanonicalName} against ${}")
+      tag.runtimeClass.isAssignableFrom(p.getClass)
+    }.asInstanceOf[Option[T]]
 
   }
 

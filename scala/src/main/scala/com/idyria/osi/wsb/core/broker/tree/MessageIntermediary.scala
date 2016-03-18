@@ -40,7 +40,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
   var messageUpClosures = List[Message => Unit]()
   
   // Error closure
-  var errorClosure : (Throwable => Unit) = { e => throw e}
+  var errorClosures = List[((MT , Throwable) => Unit)]() 
   
   // User Interface
   //-----------------
@@ -50,7 +50,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
   def onDownMessage(cl: MT => Unit) = this.messageDownClosures = messageDownClosures :+ cl
   def onUpMessage[T <: Message](cl: T => Unit) = this.messageUpClosures = messageUpClosures :+ cl.asInstanceOf[Message => Unit]
   
-  def onError(cl: Throwable => Unit) = this.errorClosure=cl
+  def onError(cl: (MT , Throwable) => Unit) = this.errorClosures = this.errorClosures :+ cl
   
   // Implementation
   //-----------------------
@@ -59,7 +59,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
   this.acceptDown{ m => 
     //println(s"MI accepting? -> "+m.getClass.getSuperclass+"->"+messageType.isAssignableFrom(m.getClass()))
     messageType.isAssignableFrom(m.getClass()) }
-  this.acceptUp{ m =>  messageType.isAssignableFrom(m.getClass())  }
+ // this.acceptUp{ m =>  messageType.isAssignableFrom(m.getClass())  }
   
   //-- Call on message closure
   this.downClosure = {
@@ -70,7 +70,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
     	  messageDownClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e : ResponseException => throw e
-        case e : Throwable => this.errorClosure(e)
+        case e : Throwable => this.errorClosures.foreach(_(m,e))
       }
       
   }
@@ -84,7 +84,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
     	  messageUpClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e : ResponseException => throw e
-        case e : Throwable => this.errorClosure(e)
+        case e : Throwable => this.errorClosures.foreach(_(m.asInstanceOf[MT],e))
       }
       
   }
