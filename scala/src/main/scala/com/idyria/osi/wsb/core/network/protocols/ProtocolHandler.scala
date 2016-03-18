@@ -38,7 +38,7 @@ abstract class ProtocolHandler[DT <: Any](var context : NetworkContext)  {
     /**
         This stack holds the data that are available from receive
     */
-    var availableDatas = new ArrayStack[DT]()
+    var availableDatas = new scala.collection.mutable.ArrayBuffer[DT]()
 
     /**
 
