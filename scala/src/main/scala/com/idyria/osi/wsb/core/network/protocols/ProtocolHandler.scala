@@ -57,14 +57,17 @@ object ProtocolHandler {
 
         // Create Procotol handler if non existent
         //----------------
-        if(!context.attachments.contains("protocol.handler")) {
-            context.attachments += ("protocol.handler" -> factory(context) )
-        
-            //println("Added protocol handler instance to context: "+context)
-        }
-
-        // Return
-        context.attachments("protocol.handler").asInstanceOf[ProtocolHandler[DT]]
+      context.attachments.get("protocol.handler") match {
+        case Some(handler) => 
+          //println(s"Found a Protocol handler on context: "+handler.getClass().getCanonicalName)
+          handler.asInstanceOf[ProtocolHandler[DT]]
+        case None => 
+          var newHandler = factory(context)
+           context.attachments += ("protocol.handler" -> newHandler )
+           newHandler
+          
+      }
+     
 
 
 
