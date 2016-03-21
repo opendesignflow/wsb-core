@@ -146,7 +146,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
 
               // In case of error, record to message
               case e: Throwable =>
-                //e.printStackTrace()
+                e.printStackTrace()
                 message(e)
 
             } finally {

@@ -85,33 +85,36 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
    * Send for server side to client side
    */
   def send(buffer: ByteBuffer, context: TCPNetworkContext) = {
+    if (context.socketChannel.isOpen()) {
 
-    this.direction match {
+      this.direction match {
 
-      case AbstractConnector.Direction.Client =>
+        case AbstractConnector.Direction.Client =>
 
-        require(this.clientNetworkContext != null)
+          require(this.clientNetworkContext != null)
 
-        //-- Pass to protocol implementation
-        var resBuffer = protocolSendData(buffer, this.clientNetworkContext)
+          //-- Pass to protocol implementation
+          var resBuffer = protocolSendData(buffer, this.clientNetworkContext)
 
-        //-- Send
-        this.clientNetworkContext.socketChannel.write(resBuffer)
+          //-- Send
+          this.clientNetworkContext.socketChannel.write(resBuffer)
 
-        //-- Flush
-       context.socketChannel.socket().getOutputStream.flush()
-        
-      case AbstractConnector.Direction.Server =>
+          //-- Flush
+          context.socketChannel.socket().getOutputStream.flush()
 
-        //-- Pass to protocol implementation
-        var resBuffer = protocolSendData(buffer, context)
+        case AbstractConnector.Direction.Server =>
 
-        //-- Send
-        while (resBuffer.remaining != 0)
-          context.socketChannel.write(resBuffer)
-          
-       //-- Flush
-       context.socketChannel.socket().getOutputStream.flush()
+          //-- Pass to protocol implementation
+          var resBuffer = protocolSendData(buffer, context)
+
+          //-- Send
+          while (resBuffer.remaining != 0)
+            context.socketChannel.write(resBuffer)
+
+          //-- Flush
+          context.socketChannel.socket().getOutputStream.flush()
+
+      }
 
     }
 
@@ -128,36 +131,36 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
    * - Send through new opening connection
    */
   def send(msg: Message): Boolean = {
+   
+      (this.direction, this.clientNetworkContext) match {
 
-    (this.direction, this.clientNetworkContext) match {
+        // Server
+        //------------------
+        case (AbstractConnector.Direction.Server, _) =>
 
-      // Server
-      //------------------
-      case (AbstractConnector.Direction.Server, _) =>
+          // Set Message to network context
+          //--------
+          msg.networkContext("message" -> msg)
 
-        // Set Message to network context
-        //--------
-        msg.networkContext("message" -> msg)
-        
+          this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
+          true
 
-        this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
-        true
+        // Client
+        //--------------
 
-      // Client
-      //--------------
+        //-- No Client network context, cannot send
+        case (AbstractConnector.Direction.Client, null) =>
 
-      //-- No Client network context, cannot send
-      case (AbstractConnector.Direction.Client, null) =>
+          throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
 
-        throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
+        //-- Client network connection is there, do it
+        case (AbstractConnector.Direction.Client, ctx) =>
 
-      //-- Client network connection is there, do it
-      case (AbstractConnector.Direction.Client, ctx) =>
+          this.send(msg.toBytes, ctx)
+          true
 
-        this.send(msg.toBytes, ctx)
-        true
-
-    }
+      }
+    
 
   }
   /**
@@ -174,14 +177,14 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
       case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext!=null) =>
-        
-        ctx.qualifier.contains(clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName()+":"+clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
+      case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext != null) =>
+
+        ctx.qualifier.contains(clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName() + ":" + clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
           case true => true
           case false => false
         }
-        
-       /* var NetworkContext.NetworkString(protocol, message, connectionString) = ctx.qualifier
+
+      /* var NetworkContext.NetworkString(protocol, message, connectionString) = ctx.qualifier
         
          println(s"------ Trying to match qualifier ${ctx.qualifier} ($connectionString , $protocol <-> ${this.protocolType}) against this connectors, target host: "+clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName())
         
@@ -195,7 +198,6 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           case _ => false
 
         }*/
-        
 
       case _ => false
     }
@@ -311,12 +313,12 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
     started.release(Integer.MAX_VALUE)
   }
-  
+
   /**
    * Create SSL connector
    */
-  def buildServerSocketChannel : ServerSocketChannel = {
-    
+  def buildServerSocketChannel: ServerSocketChannel = {
+
     ServerSocketChannel.open();
   }
 
@@ -346,7 +348,6 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
       this.serverSocket = buildServerSocketChannel
       this.serverSocket.bind(new InetSocketAddress(address, port))
 
-      
       // Register Selector for all operations
       // !! Selector only works on non blocking sockets
       //----------------------
@@ -376,8 +377,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
             key match {
 
               //-- Ignores
-              case key if (!key.isValid()) => 
-              
+              case key if (!key.isValid()) =>
+
               // Accept
               //--------------------
               case key if (key.isValid && key.isAcceptable) => {
@@ -389,34 +390,34 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                 // Prepare Network Context
                 //----------------------------
                 try {
-                  var networkContext = 
+                  var networkContext =
                     new TCPNetworkContext(clientSocket)
-                  
+
                   networkContext.qualifier = s"client@${networkContext.hashCode}"
                   networkContext.relatedConnector = this
                   clientsContextsMap += (networkContext.toString -> networkContext)
-  
+
                   @->("server.accepted")
                   @->("server.accepted", networkContext)
-  
+
                   // Register Socket Channel to selector
                   // !! Selector only works on non blocking sockets
                   //-----------------
                   clientSocket.configureBlocking(false);
                   var clientSocketKey = clientSocket.register(this.serverSocketSelector, SelectionKey.OP_READ, SelectionKey.OP_WRITE)
-  
+
                   //-- Register NetworkContext with key
                   clientSocketKey.attach(networkContext)
                   keyIterator.remove
-                  
+
                 } catch {
                   // Error while accepting connection -> live on
-                  case e : Throwable => 
+                  case e: Throwable =>
                     e.printStackTrace()
                     key.cancel()
                     keyIterator.remove
                 }
-                
+
                 //keyIterator.remove
 
               }
@@ -489,7 +490,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                             m =>
 
                               //println("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
-                            	//logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
+                              //logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
 
@@ -531,13 +532,13 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       networkContext.@->("close")
                       this.clientsContextsMap -= networkContext.toString
                       socketChannel.close();
-                      
+
                       // Cancel key
                       key.cancel()
                       //continue = false
-                      
+
                       // FIXME Remove from selector!!!!!
-                     
+
                       //keyIterator.remove
                     }
                   }
@@ -548,18 +549,18 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                   case e: java.io.IOException =>
 
                     this.clientsContextsMap -= networkContext.toString
-                    logFine[TCPConnector]("-- Closing Connection for: "+networkContext.toString)
+                    logFine[TCPConnector]("-- Closing Connection for: " + networkContext.toString)
 
                     networkContext.@->("close")
 
-                  case e: Throwable => 
-                    
+                  case e: Throwable =>
+
                     this.clientsContextsMap -= networkContext.toString
-                    logFine[TCPConnector]("-- An error occured, Closing Connection for: "+networkContext.toString)
+                    logFine[TCPConnector]("-- An error occured, Closing Connection for: " + networkContext.toString)
                     e.printStackTrace()
                     networkContext.@->("close")
-                    
-                    //throw e
+
+                  //throw e
 
                 } finally {
 
@@ -570,27 +571,26 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
               // Fall back
               //----------------
               case key => {
-                
+
                 logFine[TCPConnector]("-- Don't know what to do with the key")
                 //keyIterator.remove
               }
 
             }
             // EOF Key matched
-         
+
             logFine("-- EOF Keys Looop")
           } // EOF While has keys
 
         } catch {
-        	
+
           // Selector has been closed (connector close for example)
           case e: java.nio.channels.ClosedSelectorException =>
-          	
-            
-            //e.printStackTrace()
 
-          case e: Throwable => 
-            
+          //e.printStackTrace()
+
+          case e: Throwable =>
+
             //e.printStackTrace()
             throw e
 
@@ -666,7 +666,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       logInfo[TCPConnector](s"[Client] Parsing messages (${messages.size}) found from protocol ")
                       messages.foreach {
                         m =>
-                        
+
                           logInfo[TCPConnector](s"[Client] Go")
                           //logInfo[TCPConnector]("[Client] Got message: " + new String(m.asInstanceOf[ByteBuffer].array()))
 
@@ -710,8 +710,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           // In case of I/O Exception, stop
           case e: java.io.IOException =>
             continue = false
-            
-            logInfo[TCPConnector](s"[Client] IOException: "+e.getLocalizedMessage())
+
+            logInfo[TCPConnector](s"[Client] IOException: " + e.getLocalizedMessage())
 
           // Otherwise let live
           case e: Throwable =>
@@ -747,7 +747,7 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
       case size if (size > 0) =>
 
         logFine[TCPConnector]("Data found after protocol parsing")
-        
+
         var res = List[T]()
         handler.availableDatas.foreach {
           data => res = res :+ data
@@ -805,7 +805,7 @@ abstract class SSLTCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TC
       case size if (size > 0) =>
 
         logFine[TCPConnector]("Data found after protocol parsing")
-        
+
         var res = List[T]()
         handler.availableDatas.foreach {
           data => res = res :+ data
@@ -853,37 +853,37 @@ class TCPNetworkContext(q: String) extends NetworkContext {
 
   var socket: Socket = null
   var socketChannel: SocketChannel = null
-  var relatedConnector : TCPConnector = null
+  var relatedConnector: TCPConnector = null
 
-   def this(so: SocketChannel) = {
+  def this(so: SocketChannel) = {
     this(so.getRemoteAddress().toString())
     socketChannel = so
     so.getRemoteAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
-      case _                              =>
+      case _ =>
     }
   }
-  
+
   def this(so: Socket) = {
     this(so.getInetAddress.toString())
     socket = so
     so.getInetAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
-      case _                              =>
+      case _ =>
     }
 
   }
-  
+
   def getLocalHostName = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getHostName
   }
-  
+
   def getLocalPort = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort
   }
-  
+
   // Events
   //-----------------
-  def onClose(cl: => Unit) = this.on("close")(cl) 
-  
+  def onClose(cl: => Unit) = this.on("close")(cl)
+
 }
