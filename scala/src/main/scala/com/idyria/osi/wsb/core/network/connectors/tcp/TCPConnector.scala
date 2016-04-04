@@ -17,6 +17,7 @@ import java.net.InetAddress
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import java.net.SocketOption
 import java.net.Socket
+import java.io.IOException
 
 /**
  *
@@ -107,12 +108,31 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           //-- Pass to protocol implementation
           var resBuffer = protocolSendData(buffer, context)
 
-          //-- Send
-          while (resBuffer.remaining != 0)
-            context.socketChannel.write(resBuffer)
+          try {
+            while (resBuffer.remaining != 0) {
 
-          //-- Flush
-          context.socketChannel.socket().getOutputStream.flush()
+              //-- Send
+              context.socketChannel.write(resBuffer)
+
+              //-- Flush
+              context.socketChannel.socket().getOutputStream.flush()
+
+            }
+            
+            resBuffer.clear()
+          } catch {
+            case e: IOException =>
+              // e.printStackTrace()
+              println("Error on send, sending event close -> "+e.getLocalizedMessage);
+              //context.@->("close")
+              resBuffer.clear()
+              try {
+                //context.socket.close()
+              } catch {
+                case e: Throwable =>
+
+              }
+          }
 
       }
 
@@ -131,36 +151,35 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
    * - Send through new opening connection
    */
   def send(msg: Message): Boolean = {
-   
-      (this.direction, this.clientNetworkContext) match {
 
-        // Server
-        //------------------
-        case (AbstractConnector.Direction.Server, _) =>
+    (this.direction, this.clientNetworkContext) match {
 
-          // Set Message to network context
-          //--------
-          msg.networkContext("message" -> msg)
+      // Server
+      //------------------
+      case (AbstractConnector.Direction.Server, _) =>
 
-          this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
-          true
+        // Set Message to network context
+        //--------
+        msg.networkContext("message" -> msg)
 
-        // Client
-        //--------------
+        this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
+        true
 
-        //-- No Client network context, cannot send
-        case (AbstractConnector.Direction.Client, null) =>
+      // Client
+      //--------------
 
-          throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
+      //-- No Client network context, cannot send
+      case (AbstractConnector.Direction.Client, null) =>
 
-        //-- Client network connection is there, do it
-        case (AbstractConnector.Direction.Client, ctx) =>
+        throw new RuntimeException("Client is not connected to Host, maybe something happened at connection")
 
-          this.send(msg.toBytes, ctx)
-          true
+      //-- Client network connection is there, do it
+      case (AbstractConnector.Direction.Client, ctx) =>
 
-      }
-    
+        this.send(msg.toBytes, ctx)
+        true
+
+    }
 
   }
   /**
@@ -400,6 +419,14 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                   @->("server.accepted")
                   @->("server.accepted", networkContext)
 
+                  networkContext.onClose {
+                    clientsContextsMap.get(networkContext.toString) match {
+                      case Some(v) => clientsContextsMap -= networkContext.toString
+                      case None =>
+                    }
+
+                  }
+
                   // Register Socket Channel to selector
                   // !! Selector only works on non blocking sockets
                   //-----------------
@@ -526,15 +553,22 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                     case readbytes if (readbytes < 0) => {
 
                       @->("server.read.close")
-
+                      readBuffer.clear();
                       logFine[TCPConnector]("-- Closing Connection")
 
                       networkContext.@->("close")
-                      this.clientsContextsMap -= networkContext.toString
-                      socketChannel.close();
 
                       // Cancel key
                       key.cancel()
+
+                      try {
+                        this.clientsContextsMap -= networkContext.toString
+                        socketChannel.close();
+                        socketChannel.socket.close();
+                      } catch {
+                        case e: Throwable =>
+                      }
+
                       //continue = false
 
                       // FIXME Remove from selector!!!!!
@@ -552,6 +586,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                     logFine[TCPConnector]("-- Closing Connection for: " + networkContext.toString)
 
                     networkContext.@->("close")
+                    // Cancel key
+                    key.cancel()
 
                   case e: Throwable =>
 
@@ -559,7 +595,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                     logFine[TCPConnector]("-- An error occured, Closing Connection for: " + networkContext.toString)
                     e.printStackTrace()
                     networkContext.@->("close")
-
+                    // Cancel key
+                    key.cancel()
                   //throw e
 
                 } finally {
@@ -572,7 +609,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
               //----------------
               case key => {
 
-                logFine[TCPConnector]("-- Don't know what to do with the key")
+                //logFine[TCPConnector]("-- Don't know what to do with the key")
+                println("-- Don't know what to do with the key")
                 //keyIterator.remove
               }
 
@@ -587,11 +625,11 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           // Selector has been closed (connector close for example)
           case e: java.nio.channels.ClosedSelectorException =>
 
-          //e.printStackTrace()
-
+          e.printStackTrace()
+          
           case e: Throwable =>
 
-            //e.printStackTrace()
+            e.printStackTrace()
             throw e
 
         }
