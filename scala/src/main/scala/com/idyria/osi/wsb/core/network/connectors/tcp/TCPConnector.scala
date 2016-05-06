@@ -105,33 +105,43 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         case AbstractConnector.Direction.Server =>
 
-          //-- Pass to protocol implementation
-          var resBuffer = protocolSendData(buffer, context)
-
           try {
-            while (resBuffer.remaining != 0) {
 
-              //-- Send
-              context.socketChannel.write(resBuffer)
+            //-- Pass to protocol implementation
+            var resBuffer = protocolSendData(buffer, context)
 
-              //-- Flush
-              context.socketChannel.socket().getOutputStream.flush()
+            try {
+              while (resBuffer.remaining != 0) {
 
+                //-- Send
+                context.socketChannel.write(resBuffer)
+
+                //-- Flush
+                context.socketChannel.socket().getOutputStream.flush()
+
+              }
+            } finally {
+              resBuffer.clear()
             }
-            
-            resBuffer.clear()
+
           } catch {
             case e: IOException =>
               // e.printStackTrace()
-              println("Error on send, sending event close -> "+e.getLocalizedMessage);
+              println("Error on send, sending event close -> " + e.getLocalizedMessage);
               //context.@->("close")
-              resBuffer.clear()
+              //resBuffer.clear()
               try {
                 //context.socket.close()
               } catch {
                 case e: Throwable =>
+                  println(s"Unhandled error")
+                  e.printStackTrace()
 
               }
+
+            case e: Throwable =>
+              println(s"Unhandled error")
+              e.printStackTrace()
           }
 
       }
@@ -625,8 +635,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           // Selector has been closed (connector close for example)
           case e: java.nio.channels.ClosedSelectorException =>
 
-          e.printStackTrace()
-          
+            e.printStackTrace()
+
           case e: Throwable =>
 
             e.printStackTrace()
@@ -812,7 +822,7 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
 
     // Ensure next user can read from content
     //---------
-    // println(s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
+     println(s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
     sendBuffer.remaining match {
       case 0 =>
         //        println("...so now fliping")

@@ -22,13 +22,14 @@
 package com.idyria.osi.wsb.core.network
 
 import com.idyria.osi.tea.listeners.ListeningSupport
+import com.idyria.osi.tea.errors.ErrorSupport
 
 /**
  *
  * The NetworkContext Class is used by messages to refer back to the network layer they were send/from to
  *
  */
-class NetworkContext extends ListeningSupport {
+class NetworkContext extends ListeningSupport with ErrorSupport{
 
   /**
    * Attachments map to store any kind of extra objects in the network context
