@@ -127,20 +127,20 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
           } catch {
             case e: IOException =>
               // e.printStackTrace()
-              println("Error on send, sending event close -> " + e.getLocalizedMessage);
+              logFine[TCPConnector]("Error on send, sending event close -> " + e.getLocalizedMessage);
               //context.@->("close")
               //resBuffer.clear()
               try {
                 //context.socket.close()
               } catch {
                 case e: Throwable =>
-                  println(s"Unhandled error")
+                  logFine[TCPConnector](s"Unhandled error")
                   e.printStackTrace()
 
               }
 
             case e: Throwable =>
-              println(s"Unhandled error")
+              logFine[TCPConnector](s"Unhandled error")
               e.printStackTrace()
           }
 
@@ -822,7 +822,7 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
 
     // Ensure next user can read from content
     //---------
-     println(s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
+    logFine[TCPConnector](s"""In protocol handler send, result is ${sendBuffer.remaining} of remaining""")
     sendBuffer.remaining match {
       case 0 =>
         //        println("...so now fliping")
