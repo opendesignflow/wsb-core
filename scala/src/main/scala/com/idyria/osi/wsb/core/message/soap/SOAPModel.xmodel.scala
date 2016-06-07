@@ -84,7 +84,7 @@ object SOAP extends ModelBuilder {
         "env:Reason" is {
             //"env:Text" ofType "string"
           "env:Text" is {
-            classType(classOf[CDataBuffer].getCanonicalName())
+            ofType("cdata")
             
           }
           

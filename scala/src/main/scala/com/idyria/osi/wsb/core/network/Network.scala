@@ -29,6 +29,8 @@ import com.idyria.osi.wsb.core.message._
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
 import com.idyria.osi.tea.logging.TLogSource
+import com.idyria.osi.wsb.core.network.dispatch.Dispatch
+import com.idyria.osi.wsb.core.network.dispatch.ExecutorDispatch
 
 /**
  * @author rleys
@@ -44,7 +46,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
   /**
    * Method to send an event to the local Engine internal Bus
    */
-  def !(msg: AnyRef) = this.engine ! msg
+ // def !(msg: AnyRef) = this.engine ! msg
 
   //  Message Send path
   //---------------
@@ -125,6 +127,22 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
     connector.network = this
     connectors += connector
 
+  }
+  
+  // Dispatch
+  //------------
+  
+  var dispatchImplementation : Option[Dispatch] = Some(new ExecutorDispatch)
+  
+  
+  def getDispatch = dispatchImplementation match {
+    case Some(d) => d 
+    case None => throw new RuntimeException("No dispatch has been defined on Network")
+  }
+  
+  def dispatch(m:Message) = {
+    
+    getDispatch.deliver(m,this.engine.broker)
   }
 
   // Lifecycle

@@ -27,7 +27,7 @@ package com.idyria.osi.wsb.core
 import com.idyria.osi.wsb.core.network.Network
 import com.idyria.osi.wsb.core.broker.MessageBroker
 
-import com.idyria.osi.aib.core.bus.aib
+
 
 /**
  * @author rleys
@@ -38,12 +38,12 @@ class WSBEngine  extends Lifecycle {
 
   // Local Aib Bus
   //-------------------------
-  var localBus = new aib
+  //var localBus = new aib
 
   /**
     Method to send an event to the local aib Bus
   */
-  def ! ( msg :  AnyRef) = this.localBus send msg
+  //def ! ( msg :  AnyRef) = this.localBus send msg
 
   // Layers
   //----------------
@@ -78,9 +78,9 @@ class WSBEngine  extends Lifecycle {
   def lStop = {
 
     Set(network,broker).foreach(_.cycleToStop)
-    this.localBus.doStop
+    //this.localBus.doStop
     
-    println("Engine Stopped")
+    //println("Engine Stopped")
   }
 
   /**
@@ -88,7 +88,7 @@ class WSBEngine  extends Lifecycle {
   */
   override protected def lClean = {
 
-    this.localBus.doStop
+    //this.localBus.doStop
 
   }
 

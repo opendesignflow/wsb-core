@@ -36,7 +36,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-ooxoo-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>3.1.2-SNAPSHOT</version>
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>
@@ -160,11 +160,11 @@
 	</repositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.idyria.osi.aib</groupId>
-			<artifactId>aib-core</artifactId>
-			<version>3.1.1-SNAPSHOT</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.idyria.osi.aib</groupId> -->
+<!-- 			<artifactId>aib-core</artifactId> -->
+<!-- 			<version>3.1.1-SNAPSHOT</version> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>com.idyria.osi.ooxoo</groupId>
 			<artifactId>ooxoo-core</artifactId>

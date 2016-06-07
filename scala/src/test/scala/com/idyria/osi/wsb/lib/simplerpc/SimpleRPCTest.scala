@@ -60,7 +60,7 @@ object SimpleRPCTest extends App {
   // Here on the client side, you could send it by TCP/IP to the server
   // For now, we just dispatch it to the broker directly as if in loop-back mode
   
-  engine ! req
+  engine.network.send(req)
   
   // Just a wait to make sure the engine's Message Thread processes before exiting
   Thread.sleep(1000)

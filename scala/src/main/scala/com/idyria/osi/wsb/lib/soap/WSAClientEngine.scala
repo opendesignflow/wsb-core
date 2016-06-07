@@ -35,7 +35,6 @@ import com.idyria.osi.wsb.core.broker.tree.Intermediary
 import com.idyria.osi.wsb.core.message.soap.SOAPMessage
 import com.idyria.osi.wsb.lib.client.WSBClientEngine
 import com.idyria.osi.wsb.core.message.soap.Fault
-import com.idyria.osi.aib.core.bus.aib
 import com.idyria.osi.wsb.core.WSBEngine
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import scala.reflect.ClassTag
@@ -82,7 +81,8 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
     // Errors
     //---------------
     on[Fault] {
-      (message, f) => aib ! f
+      (message, f) => 
+        //aib ! f
     }
 
   }
@@ -158,7 +158,8 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
 
     // Send
     //----------
-    engine ! message
+    engine.network.send(message)
+
 
   }
 

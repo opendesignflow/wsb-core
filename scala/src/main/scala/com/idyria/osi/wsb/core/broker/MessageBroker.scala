@@ -96,7 +96,7 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   /**
     Method to send an event to the local Engine internal Bus
   */
-  def ! ( msg :  AnyRef) = this.engine ! msg
+  //def ! ( msg :  AnyRef) = this.engine ! msg
 
 
   // Lifecycle
@@ -109,7 +109,7 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   def lInit = {
 
     // Register Message Closure to aib
-    engine.localBus.registerClosure(messageReceiveClosure)
+    //engine.localBus.registerClosure(messageReceiveClosure)
 
 
  

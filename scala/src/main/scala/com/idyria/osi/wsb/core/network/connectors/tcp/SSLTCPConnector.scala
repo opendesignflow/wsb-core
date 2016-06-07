@@ -466,7 +466,8 @@ abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with
                       message.networkContext = networkContext
 
                       // Send
-                      SSLTCPConnector.this.network ! message
+                      SSLTCPConnector.this.network.dispatch(message)
+                 
                   }
 
                 // Protocol not ready
@@ -681,7 +682,7 @@ abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with
                           message.networkContext = clientNetworkContext
 
                           // Send
-                          this.network ! message
+                          this.network.dispatch(message)
                       }
 
                     case None =>

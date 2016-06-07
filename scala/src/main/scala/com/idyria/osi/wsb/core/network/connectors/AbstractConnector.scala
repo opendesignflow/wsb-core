@@ -123,7 +123,7 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
   def lStart = {
 
     this.start()
-    @->("stop")
+    @->("start")
   }
 
   /**

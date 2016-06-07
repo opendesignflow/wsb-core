@@ -32,6 +32,7 @@ import java.util.regex.Pattern
 import com.idyria.osi.tea.logging.TLogSource
 import com.idyria.osi.tea.listeners.ListeningSupport
 import scala.reflect.ClassTag
+import org.xml.sax.helpers.NewInstance
 
 /**
  * @author rleys
@@ -277,6 +278,23 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     intermediary
   }
 
+  def addIntermediaryBefore[IT <: MT](targetIntermediary:Intermediary[_],newIntermediary : Intermediary[IT]) : Intermediary[IT] = {
+   
+    intermediaries.indexOf(targetIntermediary) match {
+      case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
+      case i => intermediaries.insert(i, newIntermediary.asInstanceOf[Intermediary[MT]])
+    }
+    newIntermediary
+  }
+  def addIntermediaryAfter(targetIntermediary:Intermediary[_],newIntermediary : Intermediary[MT]) : Intermediary[MT] = {
+   
+    intermediaries.indexOf(targetIntermediary) match {
+      case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
+      case i => intermediaries.insert(i+1, newIntermediary)
+    }
+    newIntermediary
+  }
+  
   /**
    * Remove an intermediary to this current intermediary
    *

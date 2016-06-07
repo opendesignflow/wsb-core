@@ -255,7 +255,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
   override def lInit = {
 
     logInfo("Creating Socket")
-
+    // Stop all threads
+    this.stopThread = false
     // Create Server Socket
     //----------------------------
     /*if (this.direction == AbstractConnector.Direction.Server) {
@@ -267,9 +268,11 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
   /**
    * Start Server Socket Thread
    */
-  /*  override def lStart = {
-
+  override def lStart = {
+    // Stop all threads
+    this.stopThread = false
     this.start
+    @->("start")
     /*
         // Start Server Thread
         //--------------
@@ -294,7 +297,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         }*/
 
-  }*/
+  }
 
   override def lStop = {
 
@@ -358,6 +361,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
    */
   override def run = {
 
+    //println("Startint TCLP Server")
     // Common
     //---------------
 
@@ -535,7 +539,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                               message.networkContext = networkContext
 
                               // Send
-                              this.network ! message
+                              this.network.dispatch(message)
                           }
 
                         // Protocol not ready
@@ -725,7 +729,8 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                           message.networkContext = clientNetworkContext
 
                           // Send
-                          this.network ! message
+                          this.network.dispatch(message)
+
                       }
 
                     case None =>

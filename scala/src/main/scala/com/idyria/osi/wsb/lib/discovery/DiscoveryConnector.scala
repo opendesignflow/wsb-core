@@ -144,7 +144,8 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
                 var serviceRecord = discoveredMap.getOrElse(packetIdentifier, {
 
                   // Not found,send and return for recording 
-                  this.network ! soapMessage
+                  this.network.dispatch(soapMessage)
+                 
 
                   //-- Save
                   discoveredMap = discoveredMap + (packetIdentifier -> (service, nextUpdate))
