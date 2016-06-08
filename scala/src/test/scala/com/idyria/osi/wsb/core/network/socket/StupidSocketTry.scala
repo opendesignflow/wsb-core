@@ -70,7 +70,7 @@ class StupidSocketTry extends FlatSpec with GivenWhenThen {
 
             // Thread must die
             try {
-                connector.join(1000)
+                connector.getThread.join(1000)
             } catch {
                 case e : Throwable => {
                     assert(false)

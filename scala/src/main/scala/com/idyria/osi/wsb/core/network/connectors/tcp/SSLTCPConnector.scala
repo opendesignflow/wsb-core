@@ -46,8 +46,9 @@ import java.nio.channels.SocketChannel
 import com.idyria.osi.tea.listeners.ListeningSupport
 import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import com.idyria.osi.wsb.core.message.Message
+import com.idyria.osi.tea.thread.ThreadLanguage
 
-abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
+abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport with ThreadLanguage {
 
   private var keyCertificatePairs = List[(File, File)]()
 
@@ -378,6 +379,21 @@ abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with
     }
 
   }
+  
+  //-- Thread definition
+  var thread: Option[Thread] = None
+
+  def getThread = thread.getOrElse {
+
+    var th = createThread {
+
+      run
+
+    }
+    th.setDaemon(true)
+    thread = Some(th)
+    th
+  }
 
   // Connector Run Method
   //------------------------
@@ -520,7 +536,7 @@ abstract class SSLTCPConnector extends AbstractConnector[TCPNetworkContext] with
    * or tries to connect to  target address if in CLIENT direction
    *
    */
-  override def run = {
+  def run = {
 
     // Common
     //---------------

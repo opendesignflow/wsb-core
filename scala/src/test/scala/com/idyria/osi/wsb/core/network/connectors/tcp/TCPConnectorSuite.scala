@@ -63,7 +63,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
 
             // Thread must die
             try {
-                connector.join(1000)
+                connector.getThread.join(1000)
             } catch {
                 case e : Throwable => {
                     assert(false)
@@ -159,7 +159,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             //-- Stop It
             connector.cycleToStop
             sock.close
-            connector.join(1000)
+            connector.getThread.join(1000)
 
 
             expectResult(true)(connectedResult)
@@ -227,7 +227,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             //-------------
             connector.cycleToStop
             socket.close
-            connector.join(1000)
+            connector.getThread.join(1000)
 
             // Check
             expectResult(true)(receivedResult)
@@ -353,7 +353,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             // Close
             //--------------
             serverConnector.cycleToStop
-            serverConnector.join(1000)
+            serverConnector.getThread.join(1000)
 
             clientConnector.cycleToStop
             
@@ -492,7 +492,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             // Close
             //--------------
             serverConnector.cycleToStop
-            serverConnector.join(1000)
+            serverConnector.getThread.join(1000)
 
             clientConnector.cycleToStop
 

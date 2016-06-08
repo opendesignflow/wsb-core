@@ -47,6 +47,7 @@ import com.idyria.osi.tea.listeners.ListeningSupport
 import java.util.Timer
 import java.util.TimerTask
 import com.idyria.osi.wsb.core.network.connectors.tcp.TCPConnector
+import com.idyria.osi.tea.thread.ThreadLanguage
 
 /**
  * This class only sends a UDP Broadcast discovery SOAP Message when in server mode, and in client waits for this message
@@ -58,9 +59,9 @@ import com.idyria.osi.wsb.core.network.connectors.tcp.TCPConnector
  * @listeningPoint service.discovered Service
  *
  */
-class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends AbstractConnector[DiscoveryNetworkContext] with TLogSource with ListeningSupport {
+class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends AbstractConnector[DiscoveryNetworkContext] with TLogSource with ListeningSupport with ThreadLanguage {
 
-  this.setDaemon(false)
+  
 
   // Configuration
   //-----------------------
@@ -81,10 +82,26 @@ class DiscoveryConnector(var serviceName: String, var port: Int = 8891) extends 
   AnyXList(classOf[Discovery])
   Message("soap", SOAPMessage)
 
+  
+  //-- Thread definition
+  var thread: Option[Thread] = None
+
+  def getThread = thread.getOrElse {
+
+    var th = createThread {
+
+      run
+
+    }
+    th.setDaemon(false)
+    thread = Some(th)
+    th
+  }
+  
   // Run
   //------------
 
-  override def run = {
+  def run = {
 
     this.direction match {
 

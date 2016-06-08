@@ -18,6 +18,7 @@ import com.idyria.osi.wsb.core.network.connectors.AbstractConnector
 import java.net.SocketOption
 import java.net.Socket
 import java.io.IOException
+import com.idyria.osi.tea.thread.ThreadLanguage
 
 /**
  *
@@ -27,7 +28,7 @@ import java.io.IOException
  *
  *
  */
-abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport {
+abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with ListeningSupport with ThreadLanguage {
 
   /**
    * Connection address
@@ -271,7 +272,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
   override def lStart = {
     // Stop all threads
     this.stopThread = false
-    this.start
+    this.getThread.start
     @->("start")
     /*
         // Start Server Thread
@@ -315,6 +316,14 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
         } catch {
           case e: Throwable =>
         }
+
+        //-- Join  hread
+        try {
+          getThread.join
+        } finally {
+          this.thread = None
+        }
+
       }
 
     } else {
@@ -325,6 +334,13 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
         this.clientSocket.close
       } catch {
         case e: Throwable =>
+      }
+
+      //-- Join  hread
+      try {
+        getThread.join
+      } finally {
+        this.thread = None
       }
 
     }
@@ -354,12 +370,27 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     ServerSocketChannel.open();
   }
 
+  //-- Thread definition
+  var thread: Option[Thread] = None
+
+  def getThread = thread.getOrElse {
+
+    var th = createThread {
+
+      run
+
+    }
+    th.setDaemon(true)
+    thread = Some(th)
+    th
+  }
+
   /**
    * Start this connector in Listening mode if in SERVER direction,
    * or tries to connect to  target address if in CLIENT direction
    *
    */
-  override def run = {
+  def run = {
 
     //println("Startint TCLP Server")
     // Common

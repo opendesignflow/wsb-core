@@ -44,7 +44,7 @@ import com.idyria.osi.tea.listeners.ListeningSupport
  * @author rleys
  *
  */
-abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifecycle with TLogSource with ListeningSupport {
+abstract class AbstractConnector[NT <: NetworkContext]  extends Lifecycle with TLogSource with ListeningSupport {
  
   /**
    * Network This Connector is registered under
@@ -122,7 +122,7 @@ abstract class AbstractConnector[NT <: NetworkContext] extends Thread with Lifec
    */
   def lStart = {
 
-    this.start()
+    //this.start()
     @->("start")
   }
 
