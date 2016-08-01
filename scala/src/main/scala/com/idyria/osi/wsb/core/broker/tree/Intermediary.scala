@@ -44,7 +44,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    * A Name for user/api to formally identify the intermediary
    */
   @xattribute
-  var name: XSDStringBuffer = ""
+  var name: String = ""
 
   /**
    * Filter is used by Broker to determine if a message should go through this intermediary.
@@ -278,23 +278,29 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     intermediary
   }
 
-  def addIntermediaryBefore[IT <: MT](targetIntermediary:Intermediary[_],newIntermediary : Intermediary[IT]) : Intermediary[IT] = {
-   
+  def addIntermediaryBefore[IT <: MT](targetIntermediary: Intermediary[_], newIntermediary: Intermediary[IT]): Intermediary[IT] = {
+
     intermediaries.indexOf(targetIntermediary) match {
       case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
-      case i => intermediaries.insert(i, newIntermediary.asInstanceOf[Intermediary[MT]])
+      case i =>
+        intermediaries.insert(i, newIntermediary.asInstanceOf[Intermediary[MT]])
+        newIntermediary.asInstanceOf[Intermediary[MT]].parentIntermediary = this
+        newIntermediary.@->("parent.new")
     }
     newIntermediary
   }
-  def addIntermediaryAfter(targetIntermediary:Intermediary[_],newIntermediary : Intermediary[MT]) : Intermediary[MT] = {
-   
+  def addIntermediaryAfter(targetIntermediary: Intermediary[_], newIntermediary: Intermediary[MT]): Intermediary[MT] = {
+
     intermediaries.indexOf(targetIntermediary) match {
       case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
-      case i => intermediaries.insert(i+1, newIntermediary)
+      case i =>
+        intermediaries.insert(i + 1, newIntermediary)
+        newIntermediary.asInstanceOf[Intermediary[MT]].parentIntermediary = this
+        newIntermediary.@->("parent.new")
     }
     newIntermediary
   }
-  
+
   /**
    * Remove an intermediary to this current intermediary
    *

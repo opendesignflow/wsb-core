@@ -353,13 +353,13 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
   //-- React on common started to signal ready to go
   on("common.started") {
 
-    started.release(Integer.MAX_VALUE)
+    started.release(started.getQueueLength)
   }
 
   //-- React on common failed to signal to make sure no thread is blocking
   on("common.start.failed") {
 
-    started.release(Integer.MAX_VALUE)
+    started.release(started.getQueueLength)
   }
 
   /**
@@ -668,10 +668,11 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
         } catch {
 
           // Selector has been closed (connector close for example)
+          // Nothing special
           case e: java.nio.channels.ClosedSelectorException =>
 
-            e.printStackTrace()
-
+            //e.printStackTrace()
+            this.@->("server.closed")
           case e: Throwable =>
 
             e.printStackTrace()

@@ -69,6 +69,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
       //-----------------------------------
       case Some(connector) =>
 
+        logFine[Network]("Found Connector to send message: "+connector)
         try {
           connector.send(msg)
         } catch {

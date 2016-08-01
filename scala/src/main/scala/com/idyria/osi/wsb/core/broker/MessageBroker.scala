@@ -41,12 +41,14 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   var brokeringTree = new Intermediary[Message] {
 
 
+    
+    
     /**
       Send message through network
     */
     upClosure = {
       message => 
-
+        logFine[MessageBroker]("Message reached top, dispatch to network")
         engine.network.send(message)
 
     }
