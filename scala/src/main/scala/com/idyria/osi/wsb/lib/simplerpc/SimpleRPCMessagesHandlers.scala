@@ -26,6 +26,7 @@ import com.idyria.osi.ooxoo.core.buffers.structural.AnyXList
 import scala.reflect.ClassTag
 import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 
+import scala.reflect._
 
 /**
  * This Intermediary maps received soap messages to closure handlers
@@ -38,7 +39,8 @@ class SimpleRPCMessagesHandler extends MessageIntermediary[SimpleRPCMessage] {
 
   // Message Type
   //--------------------
-  def messageType = classOf[SimpleRPCMessage]
+  val ttag = classTag[SimpleRPCMessage]
+
   
   /**
    * Maps qualifier strings to actual handling closures

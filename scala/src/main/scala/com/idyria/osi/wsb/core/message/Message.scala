@@ -28,11 +28,13 @@ import com.idyria.osi.ooxoo.core.buffers.structural.xelement_base
 import com.idyria.osi.wsb.core.message.soap.SOAPMessage
 import com.idyria.osi.wsb.core.network.NetworkContext
 import com.idyria.osi.wsb.core.message.soap.JSONSOAPMessage
+import com.idyria.osi.tea.errors.ErrorSupport
+
 /**
  * @author rleys
  *
  */
-trait Message {
+trait Message extends ErrorSupport {
 
   /**
    * Qualifier used in tree processing to filter out subtrees
@@ -55,6 +57,12 @@ trait Message {
    * To be implemented by messages for connectors to retrieve bytes for this message
    */
   def toBytes: ByteBuffer
+  
+  /**
+   * Set to true to mark the message as being the last in a series of related messages
+   * This is useful for some intermediaries to ignore messages, but force processing a lastInTrain message
+   */
+  var lastInTrain =  false
 
   // Error Handling
   //-----------------
@@ -63,7 +71,7 @@ trait Message {
    * if an intermediary fails by throwing an exception, this doesn't mean the whole tree processing fails, because handling might differ based on applications
    * However, errors are stored here so that some special intermediary can log errors or do some other stuff
    */
-  var errors = List[Throwable]()
+  //var errors = List[Throwable]()
 
   /**
    * Execute closure on all errors, and remove errors from list
@@ -85,9 +93,7 @@ trait Message {
 
   }
   
-  def clearErrors = {
-    this.errors = List[Throwable]()
-  }
+  def clearErrors =this.resetErrors
 
   // Transformation: 
   //------------------------
@@ -133,7 +139,7 @@ trait Message {
    */
   def apply(e: Throwable) = {
 
-    this.errors = e :: this.errors
+    this.addError(e)
 
   }
 
@@ -194,5 +200,9 @@ object Message {
  */
 trait UpMessage {
 
+}
+
+trait InternalMessage extends Message {
+  def toBytes = throw new RuntimeException("Internal Message not intended for output, no bytes to be produced")
 }
 

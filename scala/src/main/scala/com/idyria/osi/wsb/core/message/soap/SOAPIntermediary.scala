@@ -24,7 +24,7 @@ package com.idyria.osi.wsb.core.message.soap
 import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 import com.idyria.osi.wsb.core.network.NetworkContext
-
+import scala.reflect._
 
 
 
@@ -38,7 +38,9 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
  
   // Message Type
   //--------------------
-  def messageType = classOf[SOAPMessage]
+  val ttag = classTag[SOAPMessage]
+  
+  //def messageType = classOf[SOAPMessage]
   
   // Error Handling
   //---------------------

@@ -40,9 +40,9 @@ import java.io.CharArrayWriter
  * This is the TOP SOAPMessage class
  *
  * The namespace is SOAP 1.2
- * @xelement(name="Envelope",ns="")
+ * 
  */
-
+@xelement(name="Envelope",ns="")
 class SOAPMessage extends Envelope with com.idyria.osi.wsb.core.message.Message {
 
   // Default qualifier
@@ -175,7 +175,7 @@ object JSONSOAPMessage extends MessageFactory {
 
       case byteBuffer: ByteBuffer =>
 
-        println(s"Building json soap from: "+new String(byteBuffer.array().map(_.toChar)))
+        //println(s"Building json soap from: "+new String(byteBuffer.array().map(_.toChar)))
         
         var msg = new JSONSOAPMessage
         msg - new JsonIO(new CharArrayReader(byteBuffer.array().map(_.toChar)))

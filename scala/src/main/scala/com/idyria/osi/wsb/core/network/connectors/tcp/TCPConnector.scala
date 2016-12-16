@@ -533,6 +533,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       var passedBuffer = readBuffer
 
                       //readBuffer.clear
+ 
                       protocolReceiveData(passedBuffer, networkContext) match {
                         case Some(messages) =>
 
@@ -565,7 +566,10 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                               //logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
+                   
 
+                              this.@->("message.received",message)
+                              
                               // Append context
                               message.networkContext = networkContext
 

@@ -22,7 +22,8 @@
 package com.idyria.osi.wsb.core.broker.tree
 
 import com.idyria.osi.wsb.core.message.Message
-
+import scala.reflect.ClassTag
+import scala.reflect._
 
 /**
  * A Specialized intermediary that focuses on accepting a specific message type
@@ -35,6 +36,8 @@ import com.idyria.osi.wsb.core.message.Message
 trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
  
   
+   val ttag: ClassTag[MT]
+   
   // Message closure
   var messageDownClosures = List[MT => Unit]()
   var messageUpClosures = List[Message => Unit]()
@@ -45,7 +48,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
   // User Interface
   //-----------------
   
-  def messageType : Class[MT]
+  def messageType : Class[MT] = ttag.runtimeClass.asInstanceOf[Class[MT]]
   
   def onDownMessage(cl: MT => Unit) = this.messageDownClosures = messageDownClosures :+ cl
   def onUpMessage[T <: Message](cl: T => Unit) = this.messageUpClosures = messageUpClosures :+ cl.asInstanceOf[Message => Unit]
@@ -81,6 +84,7 @@ trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
     m => 
     
       try {
+     
     	  messageUpClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e : ResponseException => throw e

@@ -84,7 +84,10 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   /**
     Add an intermediary to the root  Intermediary
   */
-  def <=(intermediary: Intermediary[_ <: Message]) = brokeringTree.<=(intermediary.asInstanceOf[Intermediary[Message]])
+  def <=[IT <: Intermediary[_<:Message]](intermediary: IT) = {
+    brokeringTree.<=(intermediary.asInstanceOf[Intermediary[Message]])
+    intermediary
+  }
   
   def prepend(intermediary: Intermediary[_ <: Message]) = brokeringTree.prepend(intermediary.asInstanceOf[Intermediary[Message]])
 

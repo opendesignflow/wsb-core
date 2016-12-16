@@ -252,7 +252,10 @@ object ConnectorFactory {
             Some(connector)
         }
 
-      case _ => throw new RuntimeException(s"Context string does not match format: $contextString")
+      case _ =>
+        
+        None
+        //throw new RuntimeException(s"Context string does not match format: $contextString")
     }
 
   }
