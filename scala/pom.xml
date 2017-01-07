@@ -36,7 +36,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-ooxoo-plugin</artifactId>
-				<version>3.1.2-SNAPSHOT</version>
+				<version>3.1.2</version>
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>
@@ -168,7 +168,7 @@
 		<dependency>
 			<groupId>com.idyria.osi.ooxoo</groupId>
 			<artifactId>ooxoo-core</artifactId>
-			<version>3.1.2-SNAPSHOT</version>
+			<version>3.1.2</version>
 		</dependency>
 	</dependencies>
 </project>
