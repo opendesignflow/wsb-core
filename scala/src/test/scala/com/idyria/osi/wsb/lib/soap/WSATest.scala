@@ -43,7 +43,7 @@ class WSATest extends FunSuite {
      
      println("Write Out result: "+str)
      
-     expectResult(true)(str.matches(""".*Action.*>.*Test.*"""))
+     assertResult(true)(str.matches(""".*Action.*>.*Test.*"""))
     
   }
   
@@ -69,9 +69,9 @@ class WSATest extends FunSuite {
     }
     
     var actionHeader = soap.header.content.find(_.getClass == classOf[Action])
-    expectResult(true)(actionHeader.isDefined)
+    assertResult(true)(actionHeader.isDefined)
 
-    expectResult("Test")(actionHeader.get.toString)
+    assertResult("Test")(actionHeader.get.toString)
 
   }
 
