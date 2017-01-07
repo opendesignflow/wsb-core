@@ -15,7 +15,7 @@ node {
 
   stage('Test') {
     sh "cd scala && ${mvnHome}/bin/mvn -B -Dmaven.test.failure.ignore test"
-    junit '**/target/surefire-reports/TEST-*.xml'
+//    junit '**/target/surefire-reports/TEST-*.xml'
   }
 
   stage('Deploy') {
