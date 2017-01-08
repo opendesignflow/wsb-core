@@ -100,7 +100,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             serverSocket.close
 
             // Check states
-            //expectResult(false)(connector.serverSocket.socket.isBound)
+            //assertResult(false)(connector.serverSocket.socket.isBound)
 
         }
 
@@ -162,7 +162,7 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             connector.getThread.join(1000)
 
 
-            expectResult(true)(connectedResult)
+            assertResult(true)(connectedResult)
 
 
 
@@ -230,8 +230,8 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             connector.getThread.join(1000)
 
             // Check
-            expectResult(true)(receivedResult)
-            expectResult("Ping\n")(connector.receivedLine.toString)
+            assertResult(true)(receivedResult)
+            assertResult("Ping\n")(connector.receivedLine.toString)
 
         }
 
@@ -368,9 +368,9 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             }
 
 
-            expectResult(true)(received)
-            expectResult(sendBase)(serverConnector.receivedLine)
-            //expectResult("Repeat: "+sendBase)(clientConnector.receivedLine)
+            assertResult(true)(received)
+            assertResult(sendBase)(serverConnector.receivedLine)
+            //assertResult("Repeat: "+sendBase)(clientConnector.receivedLine)
             assert(clientConnector.receivedLine.equals("Repeat: "+sendBase))
         }
 
@@ -506,10 +506,10 @@ class TCPConnectorSuite extends FeatureSpec with GivenWhenThen {
             }
 
 
-            expectResult(true)(received)
-            expectResult(sendBase)(clientConnector.receivedLine)
-            //expectResult("Repeat: "+sendBase)(clientConnector.receivedLine)
-            expectResult("Repeat: "+sendBase)(serverConnector.receivedLine)
+            assertResult(true)(received)
+            assertResult(sendBase)(clientConnector.receivedLine)
+            //assertResult("Repeat: "+sendBase)(clientConnector.receivedLine)
+            assertResult("Repeat: "+sendBase)(serverConnector.receivedLine)
             //assert(serverConnector.receivedLine.equals("Repeat: "+sendBase))
 
         }

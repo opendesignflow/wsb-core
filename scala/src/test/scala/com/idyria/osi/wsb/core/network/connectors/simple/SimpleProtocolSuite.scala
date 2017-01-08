@@ -44,7 +44,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         println("Result: "+new String(sendResult.array()))
 
         Then("Output must match protocol")
-        expectResult(expectedResult)(new String(sendResult.array()))
+        assertResult(expectedResult)(new String(sendResult.array()))
 
 
 
@@ -102,11 +102,11 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("Last returned boolean must be true")
         //---------------
-        expectResult(true)(lastResult)
+        assertResult(true)(lastResult)
 
         And("The Produced Data must be the message")
         //------------------------------
-        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+        assertResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
 
     }
 
@@ -142,12 +142,12 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("Last returned boolean must be true")
         //---------------
-        expectResult(true)(lastResult)
-        expectResult(1)(serverHandler.availableDatas.size)
+        assertResult(true)(lastResult)
+        assertResult(1)(serverHandler.availableDatas.size)
 
         And("The Produced Data must be the message")
         //------------------------------
-        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+        assertResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
 
 
     }
@@ -165,7 +165,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("The Produced Data must be the message")
         //----------------
-        expectResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
+        assertResult(sendMessage)(new String(serverHandler.availableDatas.head.array()))
 
         When("Doing the same again")
         //----------------
@@ -175,8 +175,8 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         Then("there are two available messages")
         //--------------------
-        expectResult(2)(serverHandler.availableDatas.size)
-        expectResult(sendMessage)(new String(serverHandler.availableDatas.last.array()))
+        assertResult(2)(serverHandler.availableDatas.size)
+        assertResult(sendMessage)(new String(serverHandler.availableDatas.last.array()))
     }
 
    /* messages.foreach {
@@ -245,7 +245,7 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
 
         // (wait for connection)
         clientConnected.acquire
-        expectResult(1,"Server has client context map")(server.clientsContextsMap.size)
+        assertResult(1,"Server has client context map")(server.clientsContextsMap.size)
 
         When("Sending a simple XML message through client")
         //--------------------
@@ -258,9 +258,9 @@ class SimpleProtocolSuite extends FunSuite  with GivenWhenThen {
         // Get client context on server side to find back handler
         var phandler : ProtocolHandler[ByteBuffer] = ProtocolHandler(server.clientsContextsMap.head._2)
         assert(phandler!=null)
-        expectResult(1)(phandler.availableDatas.size)
+        assertResult(1)(phandler.availableDatas.size)
 
-        expectResult(sendMessage)(new String(phandler.availableDatas.head.array()))
+        assertResult(sendMessage)(new String(phandler.availableDatas.head.array()))
 
         // Stop
         //----------------------

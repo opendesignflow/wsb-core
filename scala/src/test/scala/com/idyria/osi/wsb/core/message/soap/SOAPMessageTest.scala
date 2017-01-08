@@ -92,7 +92,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
     var testHeader2 = new TestHeader2
     message.header.content += testHeader2
 
-    expectResult(2)(message.header.content.size)
+    assertResult(2)(message.header.content.size)
 
     messageWithHeaders = message.toXMLString
     println(messageWithHeaders)
@@ -113,7 +113,7 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
     var testHeader2 = new TestHeaderNS1
     message.header.content += testHeader2
 
-    expectResult(2)(message.header.content.size)
+    assertResult(2)(message.header.content.size)
 
     var messageWithHeaders = message.toXMLString
     println(messageWithHeaders)
@@ -130,12 +130,12 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
 
     // Check Header elements have been parsed
     //--------------------------
-    expectResult(2)(message.header.content.size)
+    assertResult(2)(message.header.content.size)
 
     // Check names
     //------------------
-    expectResult("TestHeader")(message.header.content.head.asInstanceOf[AnyElementBuffer].name)
-    expectResult("TestHeader2")(message.header.content.last.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader")(message.header.content.head.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader2")(message.header.content.last.asInstanceOf[AnyElementBuffer].name)
 
   }
 
@@ -165,26 +165,26 @@ class SOAPMessageTest extends FunSuite with GivenWhenThen {
 
     // Check  elements have been parsed
     //--------------------------
-    expectResult(3)(message.header.content.size)
-    expectResult(4)(message.body.content.size)
+    assertResult(3)(message.header.content.size)
+    assertResult(4)(message.body.content.size)
 
     // Check names
     //------------------
-    expectResult("TestHeader")(message.header.content.head.asInstanceOf[AnyElementBuffer].name)
-    expectResult("TestHeader2")(message.header.content.last.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader")(message.header.content.head.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader2")(message.header.content.last.asInstanceOf[AnyElementBuffer].name)
 
-    expectResult("TestHeader")(message.body.content.head.asInstanceOf[AnyElementBuffer].name)
-    expectResult("TestHeader2")(message.body.content.last.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader")(message.body.content.head.asInstanceOf[AnyElementBuffer].name)
+    assertResult("TestHeader2")(message.body.content.last.asInstanceOf[AnyElementBuffer].name)
 
     // Check Attributes
     //----------------------
     var firstHeader = message.header.content.head.asInstanceOf[AnyElementBuffer]
-    expectResult(1)(firstHeader.content.size)
+    assertResult(1)(firstHeader.content.size)
 
     var firstHeaderAttribute = firstHeader.content.head
-    expectResult(true)(firstHeaderAttribute.isInstanceOf[AnyAttributeBuffer])
-    expectResult("name")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].name)
-    expectResult("hihi")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].data)
+    assertResult(true)(firstHeaderAttribute.isInstanceOf[AnyAttributeBuffer])
+    assertResult("name")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].name)
+    assertResult("hihi")(firstHeaderAttribute.asInstanceOf[AnyAttributeBuffer].data)
 
   }
 
