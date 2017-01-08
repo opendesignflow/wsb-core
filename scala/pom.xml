@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.odfi.wsb</groupId>
 	<artifactId>wsb-core</artifactId>
-	<version>3.3.0-SNAPSHOT</version>
+	<version>3.3.0</version>
 	<name>WSB Core</name>
 	<inceptionYear>2008</inceptionYear>
 	<parent>
