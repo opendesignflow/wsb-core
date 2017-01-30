@@ -380,7 +380,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
       run
 
     }
-    th.setDaemon(true)
+    th.setDaemon(false)
     thread = Some(th)
     th
   }
