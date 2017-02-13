@@ -171,9 +171,9 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         // Set Message to network context
         //--------
-        msg.networkContext("message" -> msg)
+        msg.networkContext.get("message" -> msg)
 
-        this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
+        this.send(msg.toBytes, msg.networkContext.get.asInstanceOf[TCPNetworkContext])
         true
 
       // Client
@@ -201,13 +201,13 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     message.networkContext match {
 
       // No context
-      case ctx if (ctx == null) => false
+      case None => false
 
       // Server, context must be in clients map
-      case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
+      case Some(ctx) if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext != null) =>
+      case Some(ctx) if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext != null) =>
 
         ctx.qualifier.contains(clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName() + ":" + clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
           case true => true
@@ -571,7 +571,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                               this.@->("message.received",message)
                               
                               // Append context
-                              message.networkContext = networkContext
+                              message.networkContext = Some(networkContext)
 
                               // Send
                               this.network.dispatch(message)
@@ -762,7 +762,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                           var message = factory(m)
 
                           // Append context
-                          message.networkContext = clientNetworkContext
+                          message.networkContext = Some(clientNetworkContext)
 
                           // Send
                           this.network.dispatch(message)

@@ -41,12 +41,12 @@ trait Message extends ErrorSupport {
    */
   var qualifier = ""
 
-  var networkContext: NetworkContext = null
+  var networkContext: Option[NetworkContext] = None
 
   /**
    * If for example, this message is a response to another one, this is the request message
    */
-  var relatedMessage: Message = null
+  var relatedMessage: Option[Message] = None
 
   /**
    * Set to true if this message or a response message has been upped (answered so to say)

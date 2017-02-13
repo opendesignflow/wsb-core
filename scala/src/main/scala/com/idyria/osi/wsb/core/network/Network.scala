@@ -80,11 +80,11 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
       // CLIENT MODE: Try to create a connector for the message in client mode
       //----------------------
-      case None if (msg.networkContext != null) =>
+      case None if (msg.networkContext.isDefined) =>
 
         // IF the context string does not match client format, this is normal, and will throw an exception
         try {
-          ConnectorFactory(msg.networkContext.qualifier) match {
+          ConnectorFactory(msg.networkContext.get.qualifier) match {
 
             case Some(connector) =>
 

@@ -33,6 +33,7 @@ import com.idyria.osi.tea.logging.TLogSource
 import com.idyria.osi.tea.listeners.ListeningSupport
 import scala.reflect.ClassTag
 import org.xml.sax.helpers.NewInstance
+import scala.annotation.tailrec
 
 /**
  * @author rleys
@@ -68,6 +69,10 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    * Per default always accept message
    */
   var acceptDownClosures: List[MT => Boolean] = List({ m => true })
+
+  def acceptAllDown = {
+    this.acceptDownClosures = List({ m => true })
+  }
 
   /**
    * Define the Closure used to accept a messagein the down direction
@@ -185,8 +190,8 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
       // Set Upped on message and related if any
       //--------
       message.upped = true
-      if (message.relatedMessage != null) {
-        message.relatedMessage.upped = true
+      if (message.relatedMessage.isDefined) {
+        message.relatedMessage.get.upped = true
       }
 
       // Up Closure
@@ -234,7 +239,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     responseMessage.networkContext = sourceMessage.networkContext
 
     // Set related message
-    responseMessage.relatedMessage = sourceMessage
+    responseMessage.relatedMessage = Some(sourceMessage)
 
     // Up :)
     up(responseMessage)
@@ -255,11 +260,16 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    * @return The added intermediary for nicer api usage
    */
   def <=(intermediary: Intermediary[MT]): Intermediary[MT] = {
-
-    intermediaries += intermediary
-    intermediary.parentIntermediary = this
-    intermediary.@->("parent.new")
+    
+    intermediaries.contains(intermediary) match {
+      case true =>
+      case false =>
+        intermediaries += intermediary
+        intermediary.parentIntermediary = this
+        intermediary.@->("parent.new") 
+    }
     intermediary
+
   }
 
   /**
@@ -374,6 +384,37 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
       tag.runtimeClass.isAssignableFrom(p.getClass)
     }.asInstanceOf[Option[T]]
 
+  }
+  
+  def findChildOfType[T <: Intermediary[MT]](implicit tag: ClassTag[T]) : Option[T] = {
+    findChild( i => tag.runtimeClass.isAssignableFrom(i.getClass)) match {
+      case Some(r) => Some(r.asInstanceOf[T])
+      case None => None
+    }
+  }
+  def findChild(cl: Intermediary[MT] => Boolean) : Option[Intermediary[MT]] = {
+    
+    var childrenToProcess = scala.collection.mutable.ArrayStack[Intermediary[MT]]()
+    childrenToProcess ++= this.intermediaries
+    var res : Option[Intermediary[MT]] = None
+    while(res.isEmpty && childrenToProcess.isEmpty==false) {
+        
+      var current = childrenToProcess.pop
+      cl(current) match {
+        case true =>  res  = Some(current)
+        case false => childrenToProcess ++= current.intermediaries
+      }
+      
+    }
+   
+    /*var res : Option[Intermediary[MT]] = None
+    this.intermediaries.foreach {
+      case i if (cl(i)==true) => res = Some(i)
+      case other => other.findChild(cl) 
+    }*/
+    
+    res
+    
   }
 
 }
