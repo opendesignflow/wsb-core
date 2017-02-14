@@ -77,7 +77,7 @@ trait Message extends ErrorSupport {
    * Execute closure on all errors, and remove errors from list
    * @return the Gathered Result list
    */
-  def consumeErrors(cl: Throwable => Any): List[Any] = {
+  def consumeAndMapErrors(cl: Throwable => Any): List[Any] = {
 
     var res = List[Any]()
     this.errors = this.errors.filter {
