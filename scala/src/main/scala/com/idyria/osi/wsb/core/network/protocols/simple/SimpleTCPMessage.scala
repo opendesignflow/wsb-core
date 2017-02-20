@@ -20,7 +20,6 @@
  * #L%
  */
 package com.idyria.osi.wsb.core.network.protocols.simple
- 
 
 import com.idyria.osi.wsb.core.network._
 import com.idyria.osi.wsb.core.network.connectors.tcp._
@@ -31,198 +30,185 @@ import java.nio._
 import com.idyria.osi.wsb.core.network.connectors.ConnectorFactory
 
 /**
-    This Connector provides a TCP connector with following protocol:
+ * This Connector provides a TCP connector with following protocol:
+ *
+ * Content-Length: (length in bytes)\n
+ * message of "length bytes"\n
+ *
+ *
+ * Simple as hell :=)
+ *
+ */
+class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer](ctx => new SimpleProtocolHandler(ctx)) {
 
-    Content-Length: (length in bytes)\n
-    message of "length bytes"\n
-
-
-    Simple as hell :=)
-
-*/
-class SimpleMessageTCPConnector extends TCPProtocolHandlerConnector[ByteBuffer]( ctx => new SimpleProtocolHandler(ctx) ) {
-
-  
-  this.protocolType="tcp"
-  this.messageType="simple"
- 
+  this.protocolType = "tcp"
+  this.messageType = "simple"
 
 }
 
 object SimpleMessageTCPConnector extends ConnectorFactory {
 
-  
   def newInstance(connectionString: String) = {
-    
+
     // Parse Connection String
     //-------------------
-   /* """.+(?::([0-9]+))?""".r.findFirstMatchIn(connectionString.trim()) match {
+    /* """.+(?::([0-9]+))?""".r.findFirstMatchIn(connectionString.trim()) match {
       case Some(m) => 
         
         
         
     }*/
     val stringFormat = """((?:[a-z0-9]+\.?)+)(?::([0-9]+))?""".r
-    var stringFormat(host,port) = connectionString.trim()
-    
+    var stringFormat(host, port) = connectionString.trim()
+
     //-- Create
     //------------
     println(s"Creating Simple TCP connection with $host , $port")
     var connector = new SimpleMessageTCPConnector
     connector.address = host
     port match {
-      case null => 
+      case null =>
       case _ => connector.port = Integer.parseInt(port)
     }
-    
+
     connector
   }
-  
 
-    //implicit def convertStringToByteBuffer(str : String ) : ByteBuffer = ByteBuffer.wrap(str.getBytes)
+  //implicit def convertStringToByteBuffer(str : String ) : ByteBuffer = ByteBuffer.wrap(str.getBytes)
 
 }
 
-
 /**
-    This class is created per client to handle the datas and decode protocol
+ * This class is created per client to handle the datas and decode protocol
+ *
+ * Content-Length: (length in bytes)\n
+ * message of "length bytes"
+ *
+ */
+class SimpleProtocolHandler(var localContext: NetworkContext) extends ProtocolHandler[ByteBuffer](localContext) with ListeningSupport {
 
-    Content-Length: (length in bytes)\n
-    message of "length bytes"
+  var receiveContentLengthBuffer = CharBuffer.allocate(1024)
 
-*/
-class SimpleProtocolHandler(var localContext : NetworkContext) extends ProtocolHandler[ByteBuffer](localContext) with ListeningSupport {
+  var receiveContentBuffer: ByteBuffer = null
 
+  var receiveSearchContentLength = true
 
-    var receiveContentLengthBuffer =  CharBuffer.allocate(1024)
+  def receive(buffer: ByteBuffer): Boolean = {
 
-    var receiveContentBuffer : ByteBuffer =  null
+    var newDataAvailable = false
 
-    var receiveSearchContentLength = true
+    // Global Loop until input buffer is empty
+    //-----------------------------
+    while (buffer.remaining > 0) {
 
-    def receive(buffer : ByteBuffer) : Boolean = {
+      @->("start", buffer)
 
-        var newDataAvailable = false
+      // State1. Search for ContentLength
+      //  - Buffer until \n is found
+      //----------
+      while (receiveSearchContentLength && buffer.remaining > 0) {
 
-        // Global Loop until input buffer is empty
-        //-----------------------------
-        while (buffer.remaining>0) {
+        // println("Content length char analysis")
 
-            @->("start",buffer)
+        buffer.get match {
 
-            // State1. Search for ContentLength
-            //  - Buffer until \n is found
-            //----------
-            while(receiveSearchContentLength && buffer.remaining>0) {
+          // \n found , allocate buffer
+          case char if (char == '\n') => {
 
+            // Get content length and reset
+            this.receiveSearchContentLength = false
 
-               // println("Content length char analysis")
+            var contentLengthString = this.receiveContentLengthBuffer.clear.toString
+            this.receiveContentLengthBuffer.clear
 
-                buffer.get match {
+            @->("contentLength.foundFirstLine", contentLengthString)
 
-                    // \n found , allocate buffer
-                    case char if (char=='\n') => {
+            // Parse
+            var parseExpression = """Content-Length:\s*([0-9]+)""".r
+            parseExpression.findFirstMatchIn(contentLengthString) match {
 
-                        // Get content length and reset
-                        this.receiveSearchContentLength = false
+              // Get Length and allocate buffer
+              case Some(res) => {
 
-                        var contentLengthString = this.receiveContentLengthBuffer.clear.toString
-                        this.receiveContentLengthBuffer.clear
-
-                        @->("contentLength.foundFirstLine",contentLengthString)
-
-                        // Parse
-                        var parseExpression = """Content-Length:\s*([0-9]+)""".r
-                        parseExpression.findFirstMatchIn(contentLengthString) match {
-
-                            // Get Length and allocate buffer
-                            case Some(res) => {
-
-                                var length= Integer.parseInt(res.group(1))
-                                this.receiveContentBuffer = ByteBuffer.allocate(length)
-                            }
-                            case None =>
-                                throw new ProtocolHandlerException(s"First line of data must respect the format: ${parseExpression.toString}, found: $contentLengthString")
-                        }
-
-
-                    }
-
-                    // Not found
-                    case char =>
-
-                        //println("Buffering for content length")
-
-                        @->("contentLength.buffering",char)
-                        this.receiveContentLengthBuffer.put(char.asInstanceOf[Char])
-                }
-
+                var length = Integer.parseInt(res.group(1))
+                this.receiveContentBuffer = ByteBuffer.allocate(length)
+              }
+              case None =>
+                throw new ProtocolHandlerException(s"First line of data must respect the format: ${parseExpression.toString}, found: $contentLengthString")
             }
 
-            // Receive normal content
-            //----------------
-            if (buffer.remaining>0) {
+          }
 
-                // Receive only until receiveContentBuffer is full
-                //-------------
-                var toReceive = (buffer.remaining > this.receiveContentBuffer.remaining()) match {
-                                        case true =>  this.receiveContentBuffer.remaining()
-                                        case false => buffer.remaining()
-                }
+          // Not found
+          case char =>
 
-                // Receive
-                //---------------
-                try {
-                    this.receiveContentBuffer.put(buffer)
-                }
-            }
+            //println("Buffering for content length")
 
-            // If receive buffer is full then we got the message
-            //---------------------------------------
-            if (this.receiveContentBuffer!=null && this.receiveContentBuffer.remaining==0) {
-
-                // Add to data stack
-                this.availableDatas += this.receiveContentBuffer
-
-
-                // Reset
-                this.receiveContentBuffer = null
-                this.receiveSearchContentLength = true
-                newDataAvailable = true
-
-            }
-
+            @->("contentLength.buffering", char)
+            this.receiveContentLengthBuffer.put(char.asInstanceOf[Char])
         }
 
-        // Data avaiable ?
-        newDataAvailable
+      }
+
+      // Receive normal content
+      //----------------
+      if (buffer.remaining > 0) {
+
+        // Receive only until receiveContentBuffer is full
+        //-------------
+        var toReceive = (buffer.remaining > this.receiveContentBuffer.remaining()) match {
+          case true => this.receiveContentBuffer.remaining()
+          case false => buffer.remaining()
+        }
+
+        // Receive
+        //---------------
+        this.receiveContentBuffer.put(buffer)
+
+      }
+
+      // If receive buffer is full then we got the message
+      //---------------------------------------
+      if (this.receiveContentBuffer != null && this.receiveContentBuffer.remaining == 0) {
+
+        // Add to data stack
+        this.availableDatas += this.receiveContentBuffer
+
+        // Reset
+        this.receiveContentBuffer = null
+        this.receiveSearchContentLength = true
+        newDataAvailable = true
+
+      }
+
     }
 
-    /**
-        The Send Method must provide a full Buffer
-        Each call to send() creates a message
+    // Data avaiable ?
+    newDataAvailable
+  }
 
-    */
-    def send (buffer: ByteBuffer,nc: NetworkContext) :  ByteBuffer  = {
+  /**
+   * The Send Method must provide a full Buffer
+   * Each call to send() creates a message
+   *
+   */
+  def send(buffer: ByteBuffer, nc: NetworkContext): ByteBuffer = {
 
+    // If Start of send, send content line
+    //--------------
+    var contentLine = s"""Content-Length: ${buffer.capacity}\n"""
+    var contentLineBytes = contentLine.getBytes
 
+    // Output
+    //-------------
+    var res = ByteBuffer.allocate(contentLineBytes.length + buffer.capacity)
+    res.put(ByteBuffer.wrap(contentLineBytes))
+    res.put(buffer)
 
-        // If Start of send, send content line
-        //--------------
-        var contentLine = s"""Content-Length: ${buffer.capacity}\n"""
-        var contentLineBytes = contentLine.getBytes
+    // Return
+    //-------------
+    return res
 
-        // Output
-        //-------------
-        var res = ByteBuffer.allocate(contentLineBytes.length+buffer.capacity)
-        res.put(ByteBuffer.wrap(contentLineBytes))
-        res.put(buffer)
-
-        // Return
-        //-------------
-        return res
-
-
-    }
+  }
 
 }

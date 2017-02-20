@@ -189,6 +189,10 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         this.send(msg.toBytes, ctx)
         true
+        
+        // Other
+      case (_,_) => 
+        throw new IllegalArgumentException("Direction and current network contxt don't yield a correct case")
 
     }
 
@@ -956,10 +960,11 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   def this(so: Socket) = {
     this(so.getInetAddress.toString())
     socket = so
-    so.getInetAddress() match {
+    
+   /* so.getInetAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
       case _ =>
-    }
+    }*/
 
   }
 
