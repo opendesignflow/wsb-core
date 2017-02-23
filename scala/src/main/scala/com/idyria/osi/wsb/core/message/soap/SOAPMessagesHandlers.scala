@@ -43,7 +43,7 @@ trait SOAPMessagesHandler extends SOAPIntermediary {
   
   // Intermediary accept only if the qualifier is present in handlers map
   //------------
-  this.acceptDown( m => messageHandlers.find( pair => pair._1._1 == m.qualifier)!=None)
+  this.acceptDown[SOAPMessage]( m => messageHandlers.find( pair => pair._1._1 == m.qualifier)!=None)
   
   //-- Receive Closure
   onDownMessage {

@@ -27,70 +27,70 @@ import scala.reflect._
 
 /**
  * A Specialized intermediary that focuses on accepting a specific message type
- * 
- * The User can just provide some more convenient function to handle messages, and sub implementations 
+ *
+ * The User can just provide some more convenient function to handle messages, and sub implementations
  * can provide default behavior in case of errors for example
- * 
- * 
+ *
+ *
  */
-trait MessageIntermediary[MT <: Message] extends Intermediary[MT] {
- 
-  
-   val ttag: ClassTag[MT]
-   
+trait MessageIntermediary[MT <: Message] extends Intermediary {
+
+  val ttag: ClassTag[MT]
+
   // Message closure
   var messageDownClosures = List[MT => Unit]()
   var messageUpClosures = List[Message => Unit]()
-  
+
   // Error closure
-  var errorClosures = List[((MT , Throwable) => Unit)]() 
-  
+  var errorClosures = List[((MT, Throwable) => Unit)]()
+
   // User Interface
   //-----------------
-  
-  def messageType : Class[MT] = ttag.runtimeClass.asInstanceOf[Class[MT]]
-  
+
+  def messageType: Class[MT] = ttag.runtimeClass.asInstanceOf[Class[MT]]
+
   def onDownMessage(cl: MT => Unit) = this.messageDownClosures = messageDownClosures :+ cl
   def onUpMessage[T <: Message](cl: T => Unit) = this.messageUpClosures = messageUpClosures :+ cl.asInstanceOf[Message => Unit]
-  
-  def onError(cl: (MT , Throwable) => Unit) = this.errorClosures = this.errorClosures :+ cl
-  
+
+  def onError(cl: (MT, Throwable) => Unit) = this.errorClosures = this.errorClosures :+ cl
+
   // Implementation
   //-----------------------
-  
+
   //-- Only accept messages of provided type
-  this.acceptDown{ m => 
+  this.acceptDown { m : Message =>
     //println(s"MI accepting? -> "+m.getClass.getSuperclass+"->"+messageType.isAssignableFrom(m.getClass()))
-    messageType.isAssignableFrom(m.getClass()) }
- // this.acceptUp{ m =>  messageType.isAssignableFrom(m.getClass())  }
-  
+    messageType.isAssignableFrom(m.getClass())
+  }
+  // this.acceptUp{ m =>  messageType.isAssignableFrom(m.getClass())  }
+
   //-- Call on message closure
   this.downClosure = {
-    
-    m => 
-    
+
+    m =>
+
       try {
-    	  messageDownClosures.foreach(_(m.asInstanceOf[MT]))
+        messageDownClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
-        case e : ResponseException => throw e
-        case e : Throwable => this.errorClosures.foreach(_(m,e))
+        case e: ResponseException => throw e
+        case e: Throwable => this.errorClosures.foreach(_(m.asInstanceOf[MT], e))
       }
-      
+
   }
-  
+
   //-- Call on message closure
   this.upClosure = {
-    
-    m => 
-    
+
+    m =>
+
       try {
-     
-    	  messageUpClosures.foreach(_(m.asInstanceOf[MT]))
+
+        messageUpClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
-        case e : ResponseException => throw e
-        case e : Throwable => this.errorClosures.foreach(_(m.asInstanceOf[MT],e))
+        case e: ResponseException => throw e
+        case e: Throwable => this.errorClosures.foreach(_(m.asInstanceOf[MT], e))
       }
-      
+
   }
-  
+
 }

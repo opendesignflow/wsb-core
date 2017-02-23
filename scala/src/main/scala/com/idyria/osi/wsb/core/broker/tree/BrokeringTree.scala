@@ -30,7 +30,7 @@ import com.idyria.osi.wsb.core.message.Message
  * @author rleys
  *
  */
-class BrokeringTree extends Intermediary[Message] {
+class BrokeringTree extends Intermediary {
   
     
 

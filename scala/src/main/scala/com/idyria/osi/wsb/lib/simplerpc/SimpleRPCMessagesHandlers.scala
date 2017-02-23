@@ -27,47 +27,46 @@ import scala.reflect.ClassTag
 import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 
 import scala.reflect._
+import com.idyria.osi.wsb.core.message.Message
 
 /**
  * This Intermediary maps received soap messages to closure handlers
- * 
+ *
  * This allows a user to use this intermediary to define message handlers at once for multiple messages
- * 
+ *
  */
 class SimpleRPCMessagesHandler extends MessageIntermediary[SimpleRPCMessage] {
-  
 
   // Message Type
   //--------------------
   val ttag = classTag[SimpleRPCMessage]
 
-  
   /**
    * Maps qualifier strings to actual handling closures
    */
-  var messageHandlers = Map[Class[_ <: SimpleRPCMessage],(  SimpleRPCMessage => Any )]()
-  
-  
+  var messageHandlers = Map[Class[_ <: SimpleRPCMessage], (SimpleRPCMessage => Any)]()
+
   // Intermediary accept only if the qualifier is present in handlers map
   //------------
-  this.acceptDown{m => 
-    
-    //println(s"Accepting ${m.getClass.getCanonicalName} -> ${messageHandlers.find{ case (k,v) => k == m.getClass  }}")
-    messageHandlers.find{ case (k,v) => k == m.getClass  } !=None
-}
+  this.acceptDown[Message] {
+    m =>
+
+      //println(s"Accepting ${m.getClass.getCanonicalName} -> ${messageHandlers.find{ case (k,v) => k == m.getClass  }}")
+      messageHandlers.find { case (k, v) => k == m.getClass } != None
+  }
   //-- Receive Closure
   onDownMessage {
-      m => 
-        //println("Got Down Message: "+m.toXMLString)
-        
-        logFine[SimpleRPCMessagesHandler](s"Trying to handle message with qualifier ${m.getClass.getCanonicalName} in SOAPMessages")
-        
-        // Look in handler maps for pairs that are matching this body payload and qualifier
-        //------------------
-        var handler = messageHandlers.get(m.getClass.asInstanceOf[Class[SimpleRPCMessage]] ).get
-          
-        handler(m)
-        /*messageHandlers.foreach {
+    m =>
+      //println("Got Down Message: "+m.toXMLString)
+
+      logFine[SimpleRPCMessagesHandler](s"Trying to handle message with qualifier ${m.getClass.getCanonicalName} in SOAPMessages")
+
+      // Look in handler maps for pairs that are matching this body payload and qualifier
+      //------------------
+      var handler = messageHandlers.get(m.getClass.asInstanceOf[Class[SimpleRPCMessage]]).get
+
+      handler(m)
+    /*messageHandlers.foreach {
           
           // Check qualifier
           case ( inputCheck , closure ) if (inputCheck._1 == m.qualifier) => 
@@ -97,66 +96,64 @@ class SimpleRPCMessagesHandler extends MessageIntermediary[SimpleRPCMessage] {
             
             
         }*/
-       
-        
-    } 
-  
+
+  }
+
   // Maintenance logic
   //-----------------
-  
+
   /**
    * Removes the closure handler is contained in map
    */
   def removeHandler[T <: ElementBuffer](cl: T => Unit) = {
-    
+
     this.messageHandlers.foreach {
-      case (t,handler) if (handler==cl) => this.messageHandlers = this.messageHandlers - t
-      case _ => 
+      case (t, handler) if (handler == cl) => this.messageHandlers = this.messageHandlers - t
+      case _ =>
     }
-    
+
   }
-  
+
   // React Definition
   //---------------
-  
-  
-  def onMessageType[T<:SimpleRPCMessage](c: Class[T],cl: T =>Any) = {
-    
-     // Record in OOXOO
+
+  def onMessageType[T <: SimpleRPCMessage](c: Class[T], cl: T => Any) = {
+
+    // Record in OOXOO
     //-------------------
     AnyXList(c)
-    
+
     // Get Qualifier
     //--------------------
     var qualifier = com.idyria.osi.wsb.core.message.Message.Qualifier(c)
-    
+
     // Create Closure that makes the checks
     //--------------------
     val realClosure = {
-      ( b : ElementBuffer) => 
-        
+      (b: ElementBuffer) =>
+
         // If Hte payload type matches the closure one then call
         if (c.isAssignableFrom(b.getClass)) {
           cl(b.asInstanceOf[T])
-        } 
+        }
     }
-    
+
     // Add to map
     //----------------------
     logFine[SimpleRPCMessagesHandler](s"Registering RPC Message handler: ${(qualifier -> c)} ")
-    messageHandlers = messageHandlers + ( c  -> realClosure)
-    
+    messageHandlers = messageHandlers + (c -> realClosure)
+
   }
-  
+
   /**
    * Adds a Response handler with:
    * - Qualifier extracted from element class
    * - Payload must be an instance of the class
-   * 
+   *
    * @warning This method records the Base Type in AnyXList so make sure the objects will be generated upon reception of SOAP Message
    */
-  def on[T <:  SimpleRPCMessage](cl: T => Any)(implicit tag: ClassTag[T]) = {
-    
+  def on[T <: SimpleRPCMessage](cl: T => Any)(implicit tag: ClassTag[T]) = {
+
     // Get Type of input
     //-----------------
     var closureMethod = cl.getClass().getMethods().filter {
@@ -164,12 +161,12 @@ class SimpleRPCMessagesHandler extends MessageIntermediary[SimpleRPCMessage] {
     }.head
 
     var elementType = tag.runtimeClass.asInstanceOf[Class[T]]
-    
-    this.onMessageType(elementType,cl)
-    
+
+    this.onMessageType(elementType, cl)
+
     // Record in OOXOO
     //-------------------
-   /* AnyXList(elementType)
+    /* AnyXList(elementType)
     
     // Get Qualifier
     //--------------------
@@ -190,8 +187,7 @@ class SimpleRPCMessagesHandler extends MessageIntermediary[SimpleRPCMessage] {
     //----------------------
     println(s"Registering SOAP Message handler: ${(qualifier -> elementType)} ")
     messageHandlers = messageHandlers + ( (qualifier -> elementType)  -> realClosure)*/
-    
-    
+
   }
-  
+
 }
