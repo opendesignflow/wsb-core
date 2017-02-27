@@ -19,6 +19,7 @@ import java.net.SocketOption
 import java.net.Socket
 import java.io.IOException
 import com.idyria.osi.tea.thread.ThreadLanguage
+import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -314,7 +315,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     if (this.direction == AbstractConnector.Direction.Server) {
 
       // Close Selector to stop operations on thread
-      if (this.serverSocketSelector != null && this.serverSocketSelector.isOpen) {
+      //if (this.serverSocketSelector != null && this.serverSocketSelector.isOpen) {
         try {
           this.serverSocketSelector.close
         } catch {
@@ -323,12 +324,14 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         //-- Join  hread
         try {
-          getThread.join
+          getThread.join(1000)
+        } catch {
+          case e: Throwable =>
         } finally {
           this.thread = None
         }
 
-      }
+     // }
 
     } else {
 

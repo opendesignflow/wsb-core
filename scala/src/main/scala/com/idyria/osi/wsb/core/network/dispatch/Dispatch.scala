@@ -9,4 +9,6 @@ trait Dispatch {
    * Ensures the Provided message is passed to the message broker
    */
   def deliver(m:Message,b:MessageBroker)  : Unit
+  
+  def lstop : Unit
 }

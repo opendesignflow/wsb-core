@@ -33,5 +33,9 @@ class ExecutorDispatch extends ThreadFactory with Dispatch {
     
   }
   
+  def lstop = {
+    timedExecutor.shutdownNow()
+  }
+  
   
 }

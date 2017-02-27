@@ -169,7 +169,20 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
   def lStop = {
 
     // Stop connectors
-    this.connectors.foreach(_.cycleToStop)
+    try {
+      this.connectors.foreach(_.cycleToStop)
+    } catch {
+      case  e : Throwable => 
+        e.printStackTrace()
+    }
+    
+    // Stop dispatch
+    this.dispatchImplementation match {
+      case Some(dispatch) => 
+        dispatch.lstop
+      case None => 
+    }
+    
 
   }
 
