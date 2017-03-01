@@ -102,7 +102,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
               connector.send(msg)
 
-            case _ => throw new RuntimeException("Cannot send message because no Connector would send it ")
+            case _ => throw new RuntimeException("Cannot send message because no Connector would send it:  "+msg.networkContext.get.qualifier)
           }
         } catch {
           case e: Throwable =>
