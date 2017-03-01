@@ -276,7 +276,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    *
    * @return The added intermediary for nicer api usage
    */
-  def <=(intermediary: Intermediary): Intermediary = {
+  def <=[I <:Intermediary](intermediary: I): I = {
 
     intermediaries.contains(intermediary) match {
       case true =>
@@ -438,8 +438,11 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
       res = res :+ cl(current)
       
 
+    
       //-- Update current
       current = current.parentIntermediary;
+      
+      
 
     }
 
@@ -447,6 +450,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
   }
 
+  /**
+   * Find child is depth first
+   */
   def findChildOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
     findChild(i => tag.runtimeClass.isInstance(i)) match {
       case Some(r) => Some(r.asInstanceOf[T])
