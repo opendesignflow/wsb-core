@@ -423,6 +423,26 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }.asInstanceOf[Option[T]]
 
   }
+  
+  def findTopMostIntermediaryOfType[IT <: Intermediary](implicit tag: ClassTag[IT]): Option[IT] = {
+    
+    var currentParent = this.parentIntermediary
+    var lastFound : Option[IT]  = None
+    while (currentParent != null ) {
+
+      tag.runtimeClass.isInstance(currentParent) match {
+        case true =>
+          lastFound = Some(currentParent.asInstanceOf[IT])
+          currentParent = currentParent.parentIntermediary
+        case false =>
+          currentParent = currentParent.parentIntermediary
+      }
+
+    }
+
+    lastFound
+    
+  }
 
   /**
    * Maps parent intermediaries using provided closure
