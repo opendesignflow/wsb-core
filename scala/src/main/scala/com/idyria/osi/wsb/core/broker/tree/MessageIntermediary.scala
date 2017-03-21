@@ -73,7 +73,9 @@ trait MessageIntermediary[MT <: Message] extends Intermediary {
         messageDownClosures.foreach(_(m.asInstanceOf[MT]))
       } catch {
         case e: ResponseException => throw e
-        case e: Throwable => this.errorClosures.foreach(_(m.asInstanceOf[MT], e))
+        case e: Throwable => 
+          this.errorClosures.foreach(_(m.asInstanceOf[MT], e))
+         
       }
 
   }

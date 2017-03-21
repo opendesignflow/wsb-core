@@ -78,16 +78,16 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
    * Define the Closure used to accept a messagein the down direction
    * If the closure does not match the message type, it returns true (ignored)
    */
-  def acceptDown[MT <: Message](cl: MT => Boolean)(implicit tag : ClassTag[MT]) = {
+  def acceptDown[MT <: Message](cl: MT => Boolean)(implicit tag: ClassTag[MT]) = {
     val realCl = {
-      m : Message => 
+      m: Message =>
         m match {
-          case m if(tag.runtimeClass.isInstance(m)) => 
-           cl(m.asInstanceOf[MT])
-          case other => 
+          case m if (tag.runtimeClass.isInstance(m)) =>
+            cl(m.asInstanceOf[MT])
+          case other =>
             true
         }
-       
+
     }
     acceptDownClosures = acceptDownClosures :+ realCl
   }
@@ -140,47 +140,57 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
     // Ignore message if pattern does not apply
     //--------------
-    filter.findFirstMatchIn(message.qualifier) match {
+    try {
+      filter.findFirstMatchIn(message.qualifier) match {
 
-      //-- Proceed locally and to descendants
-      case Some(matchResult) if (acceptDownClosures.forall(_(message))) =>
+        //-- Proceed locally and to descendants
+        case Some(matchResult) if (acceptDownClosures.forall(_(message))) =>
 
-        logInfo[this.type](s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
+          logInfo[this.type](s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
 
-        // Local closure
-        //-------------
-        downClosure match {
-          case null =>
-          case closure =>
+          // Local closure
+          //-------------
+          downClosure match {
+            case null =>
+            case closure =>
 
-            try {
+              try {
 
-              closure(message)
+                closure(message)
 
-            } catch {
-              case e: ResponseException =>
+              } catch {
+                case e: ResponseException =>
 
-              //throw e
+                //throw e
 
-              // In case of error, record to message
-              case e: Throwable =>
-                e.printStackTrace()
-                message(e)
+                // In case of error, record to message
+                case e: Throwable =>
+                  e.printStackTrace()
+                  message(e)
 
-            } finally {
+              } finally {
 
-            }
-        }
+              }
+          }
 
-        // Pass to children if closure did not throw anything out
-        downTree(message)
+          // Pass to children if closure did not throw anything out
+          downTree(message)
 
-      //-- Ignore
-      case _ =>
+        //-- Ignore
+        case _ =>
 
-        logInfo[this.type](s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
+          logInfo[this.type](s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
 
-      //println(s"---> Rejected")
+        //println(s"---> Rejected")
+
+      }
+
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        message(e)
+
+    } finally {
 
     }
 
@@ -267,16 +277,16 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   //-------------------
 
   def detach = this.parentIntermediary match {
-    case null => 
+    case null =>
     case other => other.-=(this)
   }
-  
+
   /**
    * Add an intermediary to this current intermediary
    *
    * @return The added intermediary for nicer api usage
    */
-  def <=[I <:Intermediary](intermediary: I): I = {
+  def <=[I <: Intermediary](intermediary: I): I = {
 
     intermediaries.contains(intermediary) match {
       case true =>
@@ -303,7 +313,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   def prepend(intermediary: Intermediary): Intermediary = {
 
     intermediary.detach
-    
+
     var newIn = XList[Intermediary] { new Intermediary {} }
     newIn += intermediary
     intermediary.parentIntermediary = this
@@ -337,14 +347,14 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }
     newIntermediary
   }
-  
+
   def triggerIntermediaryAdded(targetIntermediary: Intermediary) = {
-    this.@->("intermediary.add",targetIntermediary)
+    this.@->("intermediary.add", targetIntermediary)
   }
-  
-  def onIntermediaryAdded[T <: Intermediary : ClassTag](cl: T => Any) = {
+
+  def onIntermediaryAdded[T <: Intermediary: ClassTag](cl: T => Any) = {
     this.onWith[T]("intermediary.add") {
-      t : T => 
+      t: T =>
         cl(t)
     }
   }
@@ -423,12 +433,12 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }.asInstanceOf[Option[T]]
 
   }
-  
+
   def findTopMostIntermediaryOfType[IT <: Intermediary](implicit tag: ClassTag[IT]): Option[IT] = {
-    
+
     var currentParent = this.parentIntermediary
-    var lastFound : Option[IT]  = None
-    while (currentParent != null ) {
+    var lastFound: Option[IT] = None
+    while (currentParent != null) {
 
       tag.runtimeClass.isInstance(currentParent) match {
         case true =>
@@ -441,7 +451,22 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }
 
     lastFound
-    
+
+  }
+
+  def findTopMostIntermediary = {
+
+    var currentParent = this.parentIntermediary
+    var lastFound = this
+    while (currentParent != null) {
+
+      lastFound = currentParent
+      currentParent = lastFound.parentIntermediary
+
+    }
+
+    lastFound
+
   }
 
   /**
@@ -456,13 +481,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
       //-- Try to match
       res = res :+ cl(current)
-      
 
-    
       //-- Update current
       current = current.parentIntermediary;
-      
-      
 
     }
 

@@ -974,10 +974,17 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   def getLocalHostName = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getHostName
   }
-
+  
+  
   def getLocalPort = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort
   }
+  
+  def getRemoteHostName = {
+    
+    socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getHostString
+  }
+
 
   // Events
   //-----------------
