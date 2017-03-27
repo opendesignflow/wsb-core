@@ -53,7 +53,7 @@ class MessageBroker(var engine: WSBEngine) extends Lifecycle with TLogSource {
   /**
    * The default brokering tree used. can be easily improved by API
    */
-  var brokeringTree = new TopBrokerIntermediary (engine)
+  val brokeringTree = new TopBrokerIntermediary (engine)
   
 
   val messageReceiveClosure = {

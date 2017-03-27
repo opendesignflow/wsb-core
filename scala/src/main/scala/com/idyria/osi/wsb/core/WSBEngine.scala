@@ -48,9 +48,9 @@ class WSBEngine  extends Lifecycle {
   // Layers
   //----------------
 
-  var network = new Network(this)
+  val network = new Network(this)
 
-  var broker = new MessageBroker(this)
+  val broker = new MessageBroker(this)
 
 
   /**

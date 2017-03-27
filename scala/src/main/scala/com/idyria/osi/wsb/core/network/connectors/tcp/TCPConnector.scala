@@ -544,6 +544,9 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       protocolReceiveData(passedBuffer, networkContext) match {
                         case Some(messages) =>
 
+                          //-- Trigger received someting
+                          networkContext.triggerInputPayloadSemaphore
+                          
                           //-- Get Message Factory
                           var factory = (Message(this.messageType), networkContext[String]("message.type")) match {
 
