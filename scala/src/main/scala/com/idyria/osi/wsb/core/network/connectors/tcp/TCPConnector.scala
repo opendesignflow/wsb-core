@@ -190,9 +190,9 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         this.send(msg.toBytes, ctx)
         true
-        
-        // Other
-      case (_,_) => 
+
+      // Other
+      case (_, _) =>
         throw new IllegalArgumentException("Direction and current network contxt don't yield a correct case")
 
     }
@@ -316,22 +316,22 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
       // Close Selector to stop operations on thread
       //if (this.serverSocketSelector != null && this.serverSocketSelector.isOpen) {
-        try {
-          this.serverSocketSelector.close
-        } catch {
-          case e: Throwable =>
-        }
+      try {
+        this.serverSocketSelector.close
+      } catch {
+        case e: Throwable =>
+      }
 
-        //-- Join  hread
-        try {
-          getThread.join(1000)
-        } catch {
-          case e: Throwable =>
-        } finally {
-          this.thread = None
-        }
+      //-- Join  hread
+      try {
+        getThread.join(1000)
+      } catch {
+        case e: Throwable =>
+      } finally {
+        this.thread = None
+      }
 
-     // }
+      // }
 
     } else {
 
@@ -540,13 +540,10 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       var passedBuffer = readBuffer
 
                       //readBuffer.clear
- 
-                      protocolReceiveData(passedBuffer, networkContext) match {
-                        case Some(messages) =>
 
-                          //-- Trigger received someting
-                          networkContext.triggerInputPayloadSemaphore
-                          
+                      protocolReceiveData(passedBuffer, networkContext) match {
+                        case Some(messages) if (networkContext.enableInputPayloadSignaling == false) =>
+
                           //-- Get Message Factory
                           var factory = (Message(this.messageType), networkContext[String]("message.type")) match {
 
@@ -576,16 +573,21 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                               //logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
-                   
 
-                              this.@->("message.received",message)
-                              
+                              this.@->("message.received", message)
+
                               // Append context
                               message.networkContext = Some(networkContext)
 
                               // Send
                               this.network.dispatch(message)
                           }
+
+                        case Some(m) if (networkContext.enableInputPayloadSignaling) =>
+
+                          //-- Trigger received someting
+                          networkContext.triggerInputPayloadSemaphore
+                          
 
                         // Protocol not ready
                         case None =>
@@ -966,8 +968,8 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   def this(so: Socket) = {
     this(so.getInetAddress.toString())
     socket = so
-    
-   /* so.getInetAddress() match {
+
+    /* so.getInetAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
       case _ =>
     }*/
@@ -977,17 +979,14 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   def getLocalHostName = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getHostName
   }
-  
-  
+
   def getLocalPort = {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort
   }
-  
+
   def getRemoteHostName = {
-    
+
     socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getHostString
   }
-
-
 
 }
