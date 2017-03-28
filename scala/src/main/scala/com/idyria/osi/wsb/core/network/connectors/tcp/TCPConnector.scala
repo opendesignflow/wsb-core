@@ -989,8 +989,5 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   }
 
 
-  // Events
-  //-----------------
-  def onClose(cl: => Unit) = this.on("close")(cl)
 
 }

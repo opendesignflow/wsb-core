@@ -36,11 +36,15 @@ class NetworkContext extends ListeningSupport with ErrorSupport {
   var enableInputPayloadSignaling = false
   var inputPayloadsSemaphore = new Semaphore(0, true)
 
-  def onClose = {
-    on("close") {
-      if (enableInputPayloadSignaling) {
+  this.onClose {
+     if (enableInputPayloadSignaling) {
         inputPayloadsSemaphore.release(Integer.MAX_VALUE)
       }
+  }
+  
+  def onClose(cl: => Unit) = {
+    on("close") {
+       cl
     }
   }
 
