@@ -33,18 +33,39 @@ import java.util.concurrent.TimeUnit
  */
 class NetworkContext extends ListeningSupport with ErrorSupport {
 
-  var inputPayloadsSemaphore = new Semaphore(0,true)
+  var enableInputPayloadSignaling = false
+  var inputPayloadsSemaphore = new Semaphore(0, true)
+
+  def onClose = {
+    on("close") {
+      if (enableInputPayloadSignaling) {
+        inputPayloadsSemaphore.release(Integer.MAX_VALUE)
+      }
+    }
+  }
 
   // USe semaphore for sync
 
   def triggerInputPayloadSemaphore = {
-    //if (inputPayloadsSemaphore.hasQueuedThreads()) {
-      inputPayloadsSemaphore.release(inputPayloadsSemaphore.getQueueLength)
-    //}
+    if (enableInputPayloadSignaling) {
+      //if (inputPayloadsSemaphore.hasQueuedThreads()) {
+      //println("Currentely waiting: " + inputPayloadsSemaphore.getQueueLength + "-> " + inputPayloadsSemaphore.availablePermits())
+
+      inputPayloadsSemaphore.release(1);
+      //inputPayloadsSemaphore.release(inputPayloadsSemaphore.getQueueLength)
+      //}
+    }
   }
-  
-  def waitForInputPayload(timeMS:Long) = {
-    inputPayloadsSemaphore.tryAcquire(timeMS, TimeUnit.MILLISECONDS)
+
+  def waitForInputPayload(timeMS: Long) = {
+    if (enableInputPayloadSignaling) {
+      try {
+        inputPayloadsSemaphore.tryAcquire(timeMS, TimeUnit.MILLISECONDS)
+      } catch {
+        case e: Throwable =>
+          e.printStackTrace()
+      }
+    }
   }
 
   /**
