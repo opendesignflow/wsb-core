@@ -29,6 +29,7 @@ import com.idyria.osi.wsb.core.message.soap.SOAPMessage
 import com.idyria.osi.wsb.core.network.NetworkContext
 import com.idyria.osi.wsb.core.message.soap.JSONSOAPMessage
 import com.idyria.osi.tea.errors.ErrorSupport
+import com.idyria.osi.wsb.core.broker.tree.single.SingleMessage
 
 /**
  * @author rleys
@@ -202,7 +203,7 @@ trait UpMessage {
 
 }
 
-trait InternalMessage extends Message {
+trait InternalMessage extends Message with SingleMessage {
   def toBytes = throw new RuntimeException("Internal Message not intended for output, no bytes to be produced")
 }
 
