@@ -988,5 +988,10 @@ class TCPNetworkContext(q: String) extends NetworkContext {
 
     socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getHostString
   }
+  
+  def getRemoteHostIP = {
+
+    socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getAddress.getHostAddress
+  }
 
 }
