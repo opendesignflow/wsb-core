@@ -7,7 +7,7 @@ import com.idyria.osi.wsb.core.broker.tree.MessageIntermediary
 
 class SingleMessageIntermediary[MT <: SingleMessage](implicit val ttag: ClassTag[MT]) extends MessageIntermediary[MT] {
 
-  println(s"Creating Single Message intermediary from: " + messageType)
+  //println(s"Creating Single Message intermediary from: " + messageType)
 
   /**
    * Busy Locks are store in a map pro virtual Channel
