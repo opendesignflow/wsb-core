@@ -109,7 +109,7 @@ object SimpleRPCTestTCP extends App {
   //-------   "simplerpc" means the message type is simplerpc (like on server side)
   //
   // When the message is send, a Connector implementation matching tcp+simple will be found (standard in the library), instantiated and connected to the server side
-  req.networkContext = new TCPNetworkContext("tcp+simple+simplerpc://localhost:8888")
+  req.networkContext = Some(new TCPNetworkContext("tcp+simple+simplerpc://localhost:8888"))
   
   // Now jut send the message (connector matching and instantiation happens here)
   clientEngine.network.send(req)

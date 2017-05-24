@@ -27,27 +27,15 @@ import com.idyria.osi.wsb.core.message.Message
 import com.idyria.osi.wsb.core.message.UpMessage
 import com.idyria.osi.tea.logging.TLogSource
 
-  
-class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource {
-
-   
- 
-  // Brokering Tree
-  //---------------------
-
-  /**
-   * The default brokering tree used. can be easily improved by API
-   */
-  var brokeringTree = new Intermediary[Message] {
-
-
+class TopBrokerIntermediary(val engine : WSBEngine) extends Intermediary {
     
+  
     
     /**
-      Send message through network
-    */
+     * Send message through network
+     */
     upClosure = {
-      message => 
+      message =>
         logFine[MessageBroker]("Message reached top, dispatch to network")
         engine.network.send(message)
 
@@ -55,43 +43,52 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
 
   }
 
-   
+class MessageBroker(var engine: WSBEngine) extends Lifecycle with TLogSource {
+
+  
+
+  // Brokering Tree
+  //---------------------
+
+  /**
+   * The default brokering tree used. can be easily improved by API
+   */
+  val brokeringTree = new TopBrokerIntermediary (engine)
+  
+
   val messageReceiveClosure = {
 
-      msg : Message => 
+    msg: Message =>
 
-        msg match {
-          case m : UpMessage => 
-            
-            logFine[MessageBroker]("received Message to up") 
-            
-            brokeringTree.up(msg)
-            
-          case _ => 
-            
-            logFine[MessageBroker]("Broker Got Down Message: "+msg.getClass) 
-            logFine[MessageBroker]("-> Qualifier "+msg.qualifier) 
-            brokeringTree.down(msg) 
-        }
-        
-          
+      msg match {
+        case m: UpMessage =>
 
-          // broker
-          
+          logFine[MessageBroker]("received Message to up")
+
+          brokeringTree.up(msg)
+
+        case _ =>
+
+          logFine[MessageBroker]("Broker Got Down Message: " + msg.getClass)
+          logFine[MessageBroker]("-> Qualifier " + msg.qualifier)
+          brokeringTree.down(msg)
+      }
+
+    // broker
 
   }
 
   /**
-    Add an intermediary to the root  Intermediary
-  */
-  def <=[IT <: Intermediary[_<:Message]](intermediary: IT) = {
-    brokeringTree.<=(intermediary.asInstanceOf[Intermediary[Message]])
+   * Add an intermediary to the root  Intermediary
+   */
+  def <=(intermediary: Intermediary) = {
+    brokeringTree.<=(intermediary.asInstanceOf[Intermediary])
     intermediary
   }
-  
-  def prepend(intermediary: Intermediary[_ <: Message]) = brokeringTree.prepend(intermediary.asInstanceOf[Intermediary[Message]])
 
-  def -=(intermediary: Intermediary[_ <: Message]) = brokeringTree.-=(intermediary.asInstanceOf[Intermediary[Message]])
+  def prepend(intermediary: Intermediary) = brokeringTree.prepend(intermediary.asInstanceOf[Intermediary])
+
+  def -=(intermediary: Intermediary) = brokeringTree.-=(intermediary.asInstanceOf[Intermediary])
 
   // Engine Connection
   //-------------
@@ -99,25 +96,22 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
   //-- Listen for Messages to be handled
 
   /**
-    Method to send an event to the local Engine internal Bus
-  */
+   * Method to send an event to the local Engine internal Bus
+   */
   //def ! ( msg :  AnyRef) = this.engine ! msg
-
 
   // Lifecycle
   //------------------------
 
   /**
-    Init Message Broker
-
-  */
+   * Init Message Broker
+   *
+   */
   def lInit = {
 
     // Register Message Closure to aib
     //engine.localBus.registerClosure(messageReceiveClosure)
 
-
- 
   }
 
   /**
@@ -135,12 +129,7 @@ class MessageBroker ( var engine : WSBEngine ) extends Lifecycle with TLogSource
 
   }
 
-
-
-
 }
 object MessageBroker {
-
-
 
 }

@@ -80,11 +80,11 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
       // CLIENT MODE: Try to create a connector for the message in client mode
       //----------------------
-      case None if (msg.networkContext != null) =>
+      case None if (msg.networkContext.isDefined) =>
 
         // IF the context string does not match client format, this is normal, and will throw an exception
         try {
-          ConnectorFactory(msg.networkContext.qualifier) match {
+          ConnectorFactory(msg.networkContext.get.qualifier) match {
 
             case Some(connector) =>
 
@@ -102,7 +102,7 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
               connector.send(msg)
 
-            case _ => throw new RuntimeException("Cannot send message because no Connector would send it ")
+            case _ => throw new RuntimeException("Cannot send message because no Connector would send it:  "+msg.networkContext.get.qualifier)
           }
         } catch {
           case e: Throwable =>
@@ -169,7 +169,20 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
   def lStop = {
 
     // Stop connectors
-    this.connectors.foreach(_.cycleToStop)
+    try {
+      this.connectors.foreach(_.cycleToStop)
+    } catch {
+      case  e : Throwable => 
+        e.printStackTrace()
+    }
+    
+    // Stop dispatch
+    this.dispatchImplementation match {
+      case Some(dispatch) => 
+        dispatch.lstop
+      case None => 
+    }
+    
 
   }
 

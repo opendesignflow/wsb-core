@@ -29,6 +29,7 @@ import com.idyria.osi.wsb.core.message.soap.SOAPMessage
 import com.idyria.osi.wsb.core.network.NetworkContext
 import com.idyria.osi.wsb.core.message.soap.JSONSOAPMessage
 import com.idyria.osi.tea.errors.ErrorSupport
+import com.idyria.osi.wsb.core.broker.tree.single.SingleMessage
 
 /**
  * @author rleys
@@ -41,12 +42,12 @@ trait Message extends ErrorSupport {
    */
   var qualifier = ""
 
-  var networkContext: NetworkContext = null
+  var networkContext: Option[NetworkContext] = None
 
   /**
    * If for example, this message is a response to another one, this is the request message
    */
-  var relatedMessage: Message = null
+  var relatedMessage: Option[Message] = None
 
   /**
    * Set to true if this message or a response message has been upped (answered so to say)
@@ -77,7 +78,7 @@ trait Message extends ErrorSupport {
    * Execute closure on all errors, and remove errors from list
    * @return the Gathered Result list
    */
-  def consumeErrors(cl: Throwable => Any): List[Any] = {
+  def consumeAndMapErrors(cl: Throwable => Any): List[Any] = {
 
     var res = List[Any]()
     this.errors = this.errors.filter {
@@ -202,7 +203,7 @@ trait UpMessage {
 
 }
 
-trait InternalMessage extends Message {
+trait InternalMessage extends Message with SingleMessage {
   def toBytes = throw new RuntimeException("Internal Message not intended for output, no bytes to be produced")
 }
 

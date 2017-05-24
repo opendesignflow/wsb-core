@@ -19,6 +19,7 @@ import java.net.SocketOption
 import java.net.Socket
 import java.io.IOException
 import com.idyria.osi.tea.thread.ThreadLanguage
+import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -171,9 +172,9 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
 
         // Set Message to network context
         //--------
-        msg.networkContext("message" -> msg)
+        msg.networkContext.get("message" -> msg)
 
-        this.send(msg.toBytes, msg.networkContext.asInstanceOf[TCPNetworkContext])
+        this.send(msg.toBytes, msg.networkContext.get.asInstanceOf[TCPNetworkContext])
         true
 
       // Client
@@ -190,6 +191,10 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
         this.send(msg.toBytes, ctx)
         true
 
+      // Other
+      case (_, _) =>
+        throw new IllegalArgumentException("Direction and current network contxt don't yield a correct case")
+
     }
 
   }
@@ -201,13 +206,13 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     message.networkContext match {
 
       // No context
-      case ctx if (ctx == null) => false
+      case None => false
 
       // Server, context must be in clients map
-      case ctx if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
+      case Some(ctx) if (this.direction == AbstractConnector.Direction.Server) => clientsContextsMap.contains(ctx.toString)
 
       // Client, host and port must match this one
-      case ctx if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext != null) =>
+      case Some(ctx) if (this.direction == AbstractConnector.Direction.Client && this.clientNetworkContext != null) =>
 
         ctx.qualifier.contains(clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName() + ":" + clientNetworkContext.socketChannel.getRemoteAddress().asInstanceOf[InetSocketAddress].getPort()) match {
           case true => true
@@ -310,21 +315,23 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
     if (this.direction == AbstractConnector.Direction.Server) {
 
       // Close Selector to stop operations on thread
-      if (this.serverSocketSelector != null && this.serverSocketSelector.isOpen) {
-        try {
-          this.serverSocketSelector.close
-        } catch {
-          case e: Throwable =>
-        }
-
-        //-- Join  hread
-        try {
-          getThread.join
-        } finally {
-          this.thread = None
-        }
-
+      //if (this.serverSocketSelector != null && this.serverSocketSelector.isOpen) {
+      try {
+        this.serverSocketSelector.close
+      } catch {
+        case e: Throwable =>
       }
+
+      //-- Join  hread
+      try {
+        getThread.join(1000)
+      } catch {
+        case e: Throwable =>
+      } finally {
+        this.thread = None
+      }
+
+      // }
 
     } else {
 
@@ -380,7 +387,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
       run
 
     }
-    th.setDaemon(true)
+    th.setDaemon(false)
     thread = Some(th)
     th
   }
@@ -533,9 +540,9 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                       var passedBuffer = readBuffer
 
                       //readBuffer.clear
- 
+
                       protocolReceiveData(passedBuffer, networkContext) match {
-                        case Some(messages) =>
+                        case Some(messages) if (networkContext.enableInputPayloadSignaling == false) =>
 
                           //-- Get Message Factory
                           var factory = (Message(this.messageType), networkContext[String]("message.type")) match {
@@ -566,16 +573,21 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                               //logInfo[TCPConnector]("[Server] Got message: "+new String(m.asInstanceOf[ByteBuffer].array()))
                               // Create Message
                               var message = factory(m)
-                   
 
-                              this.@->("message.received",message)
-                              
+                              this.@->("message.received", message)
+
                               // Append context
-                              message.networkContext = networkContext
+                              message.networkContext = Some(networkContext)
 
                               // Send
                               this.network.dispatch(message)
                           }
+
+                        case Some(m) if (networkContext.enableInputPayloadSignaling) =>
+
+                          //-- Trigger received someting
+                          networkContext.triggerInputPayloadSemaphore
+                          
 
                         // Protocol not ready
                         case None =>
@@ -762,7 +774,7 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
                           var message = factory(m)
 
                           // Append context
-                          message.networkContext = clientNetworkContext
+                          message.networkContext = Some(clientNetworkContext)
 
                           // Send
                           this.network.dispatch(message)
@@ -956,10 +968,11 @@ class TCPNetworkContext(q: String) extends NetworkContext {
   def this(so: Socket) = {
     this(so.getInetAddress.toString())
     socket = so
-    so.getInetAddress() match {
+
+    /* so.getInetAddress() match {
       case sa: java.net.InetSocketAddress => this.qualifier = s"${sa.getHostString()}:${sa.getPort()}"
       case _ =>
-    }
+    }*/
 
   }
 
@@ -971,8 +984,14 @@ class TCPNetworkContext(q: String) extends NetworkContext {
     socket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort
   }
 
-  // Events
-  //-----------------
-  def onClose(cl: => Unit) = this.on("close")(cl)
+  def getRemoteHostName = {
+
+    socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getHostString
+  }
+  
+  def getRemoteHostIP = {
+
+    socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getAddress.getHostAddress
+  }
 
 }

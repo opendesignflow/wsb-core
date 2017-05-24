@@ -154,7 +154,7 @@ class WSAClientEngine(e: WSBEngine = new WSBEngine) extends WSBClientEngine(e) {
 
     // Set network context to string
     //--------------
-    message.networkContext = NetworkContext(networkId)
+    message.networkContext = Some(NetworkContext(networkId))
 
     // Send
     //----------

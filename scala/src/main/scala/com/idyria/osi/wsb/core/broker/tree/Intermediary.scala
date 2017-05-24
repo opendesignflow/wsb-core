@@ -33,12 +33,13 @@ import com.idyria.osi.tea.logging.TLogSource
 import com.idyria.osi.tea.listeners.ListeningSupport
 import scala.reflect.ClassTag
 import org.xml.sax.helpers.NewInstance
+import scala.annotation.tailrec
 
 /**
  * @author rleys
  *
  */
-trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with ListeningSupport {
+trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
   /**
    * A Name for user/api to formally identify the intermediary
@@ -53,12 +54,12 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   var filter: Regex = """.*""".r
 
   @xelement
-  var intermediaries: XList[Intermediary[MT]] = XList[Intermediary[MT]] { new Intermediary[MT] {} }
+  var intermediaries: XList[Intermediary] = XList[Intermediary] { new Intermediary {} }
 
   /**
-   * A parent Intermediary[MT] if defined, mainly for up operation
+   * A parent Intermediary if defined, mainly for up operation
    */
-  var parentIntermediary: Intermediary[MT] = null
+  var parentIntermediary: Intermediary = null
 
   // Up/ Down closures for user processing
   // -- The Closures are stored in a list of closures that all must return true for the message to be accepted
@@ -67,15 +68,31 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   /**
    * Per default always accept message
    */
-  var acceptDownClosures: List[MT => Boolean] = List({ m => true })
+  var acceptDownClosures: List[Message => Boolean] = List({ m => true })
+
+  def acceptAllDown = {
+    this.acceptDownClosures = List({ m => true })
+  }
 
   /**
    * Define the Closure used to accept a messagein the down direction
-   *
+   * If the closure does not match the message type, it returns true (ignored)
    */
-  def acceptDown(cl: MT => Boolean) = acceptDownClosures = acceptDownClosures :+ cl
+  def acceptDown[MT <: Message](cl: MT => Boolean)(implicit tag: ClassTag[MT]) = {
+    val realCl = {
+      m: Message =>
+        m match {
+          case m if (tag.runtimeClass.isInstance(m)) =>
+            cl(m.asInstanceOf[MT])
+          case other =>
+            true
+        }
 
-  var downClosure: (MT => Unit) = null
+    }
+    acceptDownClosures = acceptDownClosures :+ realCl
+  }
+
+  var downClosure: (Message => Unit) = null
 
   /**
    * Per default always accept message
@@ -97,7 +114,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    * that add some default message processing, to avoid the user having to know where the start is located
    *
    */
-  var upStart: Intermediary[MT] = null
+  var upStart: Intermediary = null
 
   // Up/Down runtime
   //---------------
@@ -105,7 +122,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   /**
    * Run message on the subtree of current intermediary
    */
-  final def downTree(message: MT): Unit = {
+  final def downTree(message: Message): Unit = {
     // Pass to children if closure did not throw anything out
     try {
       this.intermediaries.foreach {
@@ -117,53 +134,63 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     }
 
   }
-  final def down(message: MT): Unit = {
+  final def down(message: Message): Unit = {
 
-    //println(s"[Down] Intermediary[MT] with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
 
     // Ignore message if pattern does not apply
     //--------------
-    filter.findFirstMatchIn(message.qualifier) match {
+    try {
+      filter.findFirstMatchIn(message.qualifier) match {
 
-      //-- Proceed locally and to descendants
-      case Some(matchResult) if (acceptDownClosures.forall(_(message))) =>
+        //-- Proceed locally and to descendants
+        case Some(matchResult) if (acceptDownClosures.forall(_(message))) =>
 
-        logInfo[this.type](s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
+          logInfo[this.type](s"${depthString("--")}  [Down] Accepted on ${this.name} with filter  $filter and message: ${message.qualifier}@${message.hashCode()} ")
 
-        // Local closure
-        //-------------
-        downClosure match {
-          case null =>
-          case closure =>
+          // Local closure
+          //-------------
+          downClosure match {
+            case null =>
+            case closure =>
 
-            try {
+              try {
 
-              closure(message)
+                closure(message)
 
-            } catch {
-              case e: ResponseException =>
+              } catch {
+                case e: ResponseException =>
 
-              //throw e
+                //throw e
 
-              // In case of error, record to message
-              case e: Throwable =>
-                e.printStackTrace()
-                message(e)
+                // In case of error, record to message
+                case e: Throwable =>
+                  e.printStackTrace()
+                  message(e)
 
-            } finally {
+              } finally {
 
-            }
-        }
+              }
+          }
 
-        // Pass to children if closure did not throw anything out
-        downTree(message)
+          // Pass to children if closure did not throw anything out
+          downTree(message)
 
-      //-- Ignore
-      case _ =>
+        //-- Ignore
+        case _ =>
 
-        logInfo[this.type](s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
+          logInfo[this.type](s"${depthString("--")} [Down] Rejected $filter with message: ${message.qualifier}@${message.hashCode()} on ${this.name}")
 
-      //println(s"---> Rejected")
+        //println(s"---> Rejected")
+
+      }
+
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        message(e)
+
+    } finally {
 
     }
 
@@ -185,8 +212,8 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
       // Set Upped on message and related if any
       //--------
       message.upped = true
-      if (message.relatedMessage != null) {
-        message.relatedMessage.upped = true
+      if (message.relatedMessage.isDefined) {
+        message.relatedMessage.get.upped = true
       }
 
       // Up Closure
@@ -194,15 +221,15 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
       upClosure match {
         case null =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary[MT] ${name} no Up closure")
+          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
 
         case closure if (acceptUpClosures.forall(_(message)) == false) =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary[MT] ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 
         case closure =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary[MT] ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 
           closure(message)
       }
@@ -217,7 +244,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
 
     }
 
-    //println(s"[Up] Intermediary[MT] with filter: $filter with message: ${message.qualifier}")
+    //println(s"[Up] Intermediary with filter: $filter with message: ${message.qualifier}")
 
   }
 
@@ -234,7 +261,7 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     responseMessage.networkContext = sourceMessage.networkContext
 
     // Set related message
-    responseMessage.relatedMessage = sourceMessage
+    responseMessage.relatedMessage = Some(sourceMessage)
 
     // Up :)
     up(responseMessage)
@@ -249,17 +276,33 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   // Language
   //-------------------
 
+  def detach = this.parentIntermediary match {
+    case null =>
+    case other => other.-=(this)
+  }
+
   /**
    * Add an intermediary to this current intermediary
    *
    * @return The added intermediary for nicer api usage
    */
-  def <=(intermediary: Intermediary[MT]): Intermediary[MT] = {
+  def <=[I <: Intermediary](intermediary: I): I = {
 
-    intermediaries += intermediary
-    intermediary.parentIntermediary = this
-    intermediary.@->("parent.new")
+    intermediaries.contains(intermediary) match {
+      case true =>
+      case false =>
+        intermediaries += intermediary
+        intermediary.parentIntermediary = this
+        intermediary.@->("parent.new")
+    }
     intermediary
+
+  }
+
+  def onNewParentIntermediary(cl: => Any) = {
+    this.on("parent.new") {
+      cl
+    }
   }
 
   /**
@@ -267,9 +310,11 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    *
    * @return The added intermediary for nicer api usage
    */
-  def prepend(intermediary: Intermediary[MT]): Intermediary[MT] = {
+  def prepend(intermediary: Intermediary): Intermediary = {
 
-    var newIn = XList[Intermediary[MT]] { new Intermediary[MT] {} }
+    intermediary.detach
+
+    var newIn = XList[Intermediary] { new Intermediary {} }
     newIn += intermediary
     intermediary.parentIntermediary = this
     intermediaries.foreach(newIn += _)
@@ -278,27 +323,40 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
     intermediary
   }
 
-  def addIntermediaryBefore[IT <: MT](targetIntermediary: Intermediary[_], newIntermediary: Intermediary[IT]): Intermediary[IT] = {
+  def addIntermediaryBefore(targetIntermediary: Intermediary, newIntermediary: Intermediary): Intermediary = {
 
     intermediaries.indexOf(targetIntermediary) match {
       case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
       case i =>
-        intermediaries.insert(i, newIntermediary.asInstanceOf[Intermediary[MT]])
-        newIntermediary.asInstanceOf[Intermediary[MT]].parentIntermediary = this
+        intermediaries.insert(i, newIntermediary.asInstanceOf[Intermediary])
+        newIntermediary.asInstanceOf[Intermediary].parentIntermediary = this
         newIntermediary.@->("parent.new")
+        triggerIntermediaryAdded(newIntermediary)
     }
     newIntermediary
   }
-  def addIntermediaryAfter(targetIntermediary: Intermediary[_], newIntermediary: Intermediary[MT]): Intermediary[MT] = {
+  def addIntermediaryAfter(targetIntermediary: Intermediary, newIntermediary: Intermediary): Intermediary = {
 
     intermediaries.indexOf(targetIntermediary) match {
       case -1 => throw new IllegalArgumentException(s"Cannot add intermediary $newIntermediary before $targetIntermediary, because $targetIntermediary is not part of this subtree")
       case i =>
         intermediaries.insert(i + 1, newIntermediary)
-        newIntermediary.asInstanceOf[Intermediary[MT]].parentIntermediary = this
+        newIntermediary.asInstanceOf[Intermediary].parentIntermediary = this
         newIntermediary.@->("parent.new")
+        triggerIntermediaryAdded(newIntermediary)
     }
     newIntermediary
+  }
+
+  def triggerIntermediaryAdded(targetIntermediary: Intermediary) = {
+    this.@->("intermediary.add", targetIntermediary)
+  }
+
+  def onIntermediaryAdded[T <: Intermediary: ClassTag](cl: T => Any) = {
+    this.onWith[T]("intermediary.add") {
+      t: T =>
+        cl(t)
+    }
   }
 
   /**
@@ -306,9 +364,9 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
    *
    * @return The removed intermediary for nicer api usage
    */
-  def -=(intermediary: Intermediary[MT]): Intermediary[MT] = {
+  def -=(intermediary: Intermediary): Intermediary = {
 
-    var newIn = XList[Intermediary[MT]] { new Intermediary[MT] {} }
+    var newIn = XList[Intermediary] { new Intermediary {} }
     intermediaries.filterNot { _ == intermediary }.foreach(newIn += _)
     intermediaries = newIn
 
@@ -345,10 +403,10 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
   /**
    * Search first parent matching the provided function
    */
-  def findParent(cl: Intermediary[MT] => Boolean): Option[Intermediary[MT]] = {
+  def findParent(cl: Intermediary => Boolean): Option[Intermediary] = {
 
     var current = this.parentIntermediary
-    var res: Option[Intermediary[MT]] = None
+    var res: Option[Intermediary] = None
     while (current != null && res == None) {
 
       //-- Try to match
@@ -366,13 +424,107 @@ trait Intermediary[MT <: Message] extends ElementBuffer with TLogSource with Lis
 
   }
 
-  def findParentOfType[T <: Intermediary[MT]](implicit tag: ClassTag[T]): Option[T] = {
+  def findParentOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
 
     this.findParent { p =>
 
       // println(s"Parent type search testing: ${p.getClass.getCanonicalName} against ${}")
       tag.runtimeClass.isAssignableFrom(p.getClass)
     }.asInstanceOf[Option[T]]
+
+  }
+
+  def findTopMostIntermediaryOfType[IT <: Intermediary](implicit tag: ClassTag[IT]): Option[IT] = {
+
+    var currentParent = this.parentIntermediary
+    var lastFound: Option[IT] = None
+    while (currentParent != null) {
+
+      tag.runtimeClass.isInstance(currentParent) match {
+        case true =>
+          lastFound = Some(currentParent.asInstanceOf[IT])
+          currentParent = currentParent.parentIntermediary
+        case false =>
+          currentParent = currentParent.parentIntermediary
+      }
+
+    }
+
+    lastFound
+
+  }
+
+  def findTopMostIntermediary = {
+
+    var currentParent = this.parentIntermediary
+    var lastFound = this
+    while (currentParent != null) {
+
+      lastFound = currentParent
+      currentParent = lastFound.parentIntermediary
+
+    }
+
+    lastFound
+
+  }
+
+  /**
+   * Maps parent intermediaries using provided closure
+   * Result list is reversed so the first element is the top parent
+   */
+  def mapParentIntermediaries[B](cl: Intermediary => B) = {
+
+    var current = this.parentIntermediary
+    var res = List[B]()
+    while (current != null) {
+
+      //-- Try to match
+      res = res :+ cl(current)
+
+      //-- Update current
+      current = current.parentIntermediary;
+
+    }
+
+    res.reverse
+
+  }
+
+  /**
+   * Find child is depth first
+   */
+  def findChildOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
+    findChild(i => tag.runtimeClass.isInstance(i)) match {
+      case Some(r) => Some(r.asInstanceOf[T])
+      case None => None
+    }
+  }
+  /**
+   * This search is recursive
+   */
+  def findChild(cl: Intermediary => Boolean): Option[Intermediary] = {
+
+    var childrenToProcess = scala.collection.mutable.ArrayStack[Intermediary]()
+    childrenToProcess ++= this.intermediaries
+    var res: Option[Intermediary] = None
+    while (res.isEmpty && childrenToProcess.isEmpty == false) {
+
+      var current = childrenToProcess.pop
+      cl(current) match {
+        case true => res = Some(current)
+        case false => childrenToProcess ++= current.intermediaries
+      }
+
+    }
+
+    /*var res : Option[Intermediary] = None
+    this.intermediaries.foreach {
+      case i if (cl(i)==true) => res = Some(i)
+      case other => other.findChild(cl) 
+    }*/
+
+    res
 
   }
 

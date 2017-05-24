@@ -96,14 +96,14 @@ trait SOAPIntermediary extends MessageIntermediary[SOAPMessage] {
   /**
    * Up default SOAPMessage with qualifier taken from com.idyria.osi.wsb.core.message.Message.Qualifier default extractor
    */
-  def up(payload:ElementBuffer,nc: NetworkContext) : Unit =  {
+  def up(payload:ElementBuffer,nc: Option[NetworkContext]) : Unit =  {
     up(com.idyria.osi.wsb.core.message.Message.Qualifier(payload),payload,nc)
   }
   
   /**
    * Up default SOAPMessage with qualifier
    */
-  def up(qualifier: String,payload:ElementBuffer,nc: NetworkContext) : Unit = {
+  def up(qualifier: String,payload:ElementBuffer,nc: Option[NetworkContext]) : Unit = {
     
     // Create new SOAPMessage
     //-------------
