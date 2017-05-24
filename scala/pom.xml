@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.odfi.wsb</groupId>
 	<artifactId>wsb-core</artifactId>
-	<version>3.3.1-SNAPSHOT</version>
+	<version>3.3.1</version>
 	<name>WSB Core</name>
 	<inceptionYear>2008</inceptionYear>
 	<parent>
@@ -167,15 +167,10 @@
 	</repositories>
 
 	<dependencies>
-<!-- 		<dependency> -->
-<!-- 			<groupId>com.idyria.osi.aib</groupId> -->
-<!-- 			<artifactId>aib-core</artifactId> -->
-<!-- 			<version>3.1.1-SNAPSHOT</version> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.odfi.ooxoo</groupId>
 			<artifactId>ooxoo-core</artifactId>
-			<version>3.2.3-SNAPSHOT</version>
+			<version>3.2.3</version>
 		</dependency>
 	</dependencies>
 </project>
