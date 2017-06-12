@@ -1,8 +1,12 @@
-/*
+/*-
  * #%L
  * WSB Core
  * %%
- * Copyright (C) 2008 - 2017 Open Design Flow
+ * Copyright (C) 2008 - 2017 OpenDesignFlow.org
+								Richard Leys (leys dot richard at gmail):
+								2008-2014 University of Heidelberg (Computer Architecture group)
+								2008-2014 Extoll GmbH (extoll.de)
+								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -18,6 +22,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * #L%
  */
+
 package com.idyria.osi.wsb.core.message.soap
 
 import com.idyria.osi.ooxoo.core.buffers.structural._

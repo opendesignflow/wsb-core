@@ -63,6 +63,13 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
+							<copyrightOwners>
+								OpenDesignFlow.org
+								Richard Leys (leys dot richard at gmail):
+								${project.inceptionYear}-2014 University of Heidelberg (Computer Architecture group)
+								${project.inceptionYear}-2014 Extoll GmbH (extoll.de)
+								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
+							</copyrightOwners>
 							<addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
 							<dryRun>false</dryRun>
 							<roots>
