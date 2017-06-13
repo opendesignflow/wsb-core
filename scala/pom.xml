@@ -189,7 +189,7 @@
 		<dependency>
 			<groupId>org.odfi.ooxoo</groupId>
 			<artifactId>ooxoo-core</artifactId>
-			<version>3.2.3</version>
+			<version>${ooxoo.version}</version>
 		</dependency>
 	</dependencies>
 </project>
