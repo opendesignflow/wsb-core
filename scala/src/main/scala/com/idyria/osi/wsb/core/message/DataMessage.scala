@@ -26,6 +26,8 @@ package com.idyria.osi.wsb.core.message
 
 
 import java.nio._
+import com.idyria.osi.ooxoo.core.buffers.structural.io.sax.STAXSyncTrait
+import com.idyria.osi.ooxoo.core.buffers.structural.ElementBuffer
 
 /**
     This class and subtypes are just classes that hold some data without any specific protocol informations
@@ -41,4 +43,10 @@ abstract class DataMessage( var bytes : ByteBuffer) extends Message {
 class StringDataMessage(var content: String) extends DataMessage(ByteBuffer.wrap(content.getBytes)) {
 
 
+}
+
+trait XMLDataMessage extends ElementBuffer with STAXSyncTrait with Message {
+  
+  def toBytes : ByteBuffer = ByteBuffer.wrap(this.toXMLString.getBytes)
+  
 }
