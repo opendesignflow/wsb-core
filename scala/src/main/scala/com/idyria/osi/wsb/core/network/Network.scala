@@ -41,7 +41,7 @@ import com.idyria.osi.wsb.core.network.dispatch.ExecutorDispatch
  */
 class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
-  var connectors = Set[AbstractConnector[_]]()
+  var connectors = List[AbstractConnector[_ <: NetworkContext]]()
 
   // Engine Connection
   //-------------
@@ -126,10 +126,10 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
 
   // Connectors Management
   //--------------------
-  def addConnector[T <: AbstractConnector[_]](connector: T) = {
+  def addConnector[T <: AbstractConnector[_ <: NetworkContext]](connector: T) = {
 
     connector.network = this
-    connectors += connector
+    connectors = connectors :+ connector
 
   }
   

@@ -125,7 +125,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   /**
    * Run message on the subtree of current intermediary
    */
-  final def downTree(message: Message): Unit = {
+  def downTree(message: Message): Unit = {
     // Pass to children if closure did not throw anything out
     try {
       this.intermediaries.foreach {
@@ -137,7 +137,9 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }
 
   }
-  final def down(message: Message): Unit = {
+  
+  
+  def down(message: Message): Unit = {
 
     //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
 
@@ -280,7 +282,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   //-------------------
 
   def detach = this.parentIntermediary match {
-    case null =>
+    case null  =>
     case other => other.-=(this)
   }
 
@@ -414,7 +416,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
       //-- Try to match
       cl(current) match {
-        case true => res = Some(current)
+        case true  => res = Some(current)
         case false =>
       }
 
@@ -500,7 +502,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   def findChildOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
     findChild(i => tag.runtimeClass.isInstance(i)) match {
       case Some(r) => Some(r.asInstanceOf[T])
-      case None => None
+      case None    => None
     }
   }
   /**
@@ -515,7 +517,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
       var current = childrenToProcess.pop
       cl(current) match {
-        case true => res = Some(current)
+        case true  => res = Some(current)
         case false => childrenToProcess ++= current.intermediaries
       }
 
