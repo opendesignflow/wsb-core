@@ -26,6 +26,7 @@ package com.idyria.osi.wsb.core.network.dispatch
 
 import com.idyria.osi.wsb.core.broker.MessageBroker
 import com.idyria.osi.wsb.core.message.Message
+import scala.reflect._
 
 trait Dispatch {
   
@@ -35,4 +36,20 @@ trait Dispatch {
   def deliver(m:Message,b:MessageBroker)  : Unit
   
   def lstop : Unit
+}
+
+
+trait TypedDispatch[MT <: Message] extends Dispatch  {
+  
+  val ttag : ClassTag[MT] 
+  
+   def deliver(m:Message,b:MessageBroker)  : Unit = {
+     //classTag[MT]
+     ttag.runtimeClass.isInstance(m) match {
+       case true => deliverMessage(m.asInstanceOf[MT],b)
+       case false => 
+     }
+   }
+   
+   def deliverMessage(m:MT,b:MessageBroker) : Unit
 }
