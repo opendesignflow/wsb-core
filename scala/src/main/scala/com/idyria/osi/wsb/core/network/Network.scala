@@ -3,10 +3,6 @@
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -64,6 +60,8 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
    */
   def send(msg: Message): Unit = {
 
+     logFine[Network]("Sending message")
+    
     // Try to find a connector that will handle the message
     //----------------------
     connectors.find { c => c.canHandle(msg) } match {
@@ -110,7 +108,11 @@ class Network(var engine: WSBEngine) extends Lifecycle with TLogSource {
         } catch {
           case e: Throwable =>
             msg(e)
-            e.printStackTrace()
+            if (isLogFine[Network] ) {
+              e.printStackTrace()
+            }
+            
+            
         }
 
       // Client: Message without Network Content

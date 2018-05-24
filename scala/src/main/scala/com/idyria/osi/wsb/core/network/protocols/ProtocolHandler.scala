@@ -3,10 +3,6 @@
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -51,6 +47,13 @@ abstract class ProtocolHandler[DT <: Any](var context : NetworkContext)  {
 
     def send(buffer: ByteBuffer,context:NetworkContext) : ByteBuffer
     
+    def getAvailableDataSize = {
+      this.synchronized {
+        availableDatas.size
+      }
+   
+    }
+    
 }
 
 // Companion object to get Protocol Handler from Network Context
@@ -65,9 +68,15 @@ object ProtocolHandler {
           //println(s"Found a Protocol handler on context: "+handler.getClass().getCanonicalName)
           handler.asInstanceOf[ProtocolHandler[DT]]
         case None => 
+          try {
           var newHandler = factory(context)
            context.attachments += ("protocol.handler" -> newHandler )
            newHandler
+          } catch {
+            case e : Throwable => 
+              e.printStackTrace()
+              throw e
+          }
           
       }
      

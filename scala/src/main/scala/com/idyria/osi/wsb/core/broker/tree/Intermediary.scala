@@ -3,10 +3,6 @@
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -137,8 +133,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     }
 
   }
-  
-  
+
   def down(message: Message): Unit = {
 
     //println(s"[Down] Intermediary with filter: $filter with message: ${message.qualifier}")
@@ -155,27 +150,35 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
           // Local closure
           //-------------
-          downClosure match {
-            case null =>
-            case closure =>
+          message.ignoreCurrentIntermediary match {
+            case true =>
+              message.ignoreCurrentIntermediary = false;
 
-              try {
+            case false =>
 
-                closure(message)
+              downClosure match {
+                case null =>
+                case closure =>
 
-              } catch {
-                case e: ResponseException =>
+                  try {
 
-                //throw e
+                    closure(message)
 
-                // In case of error, record to message
-                case e: Throwable =>
-                  e.printStackTrace()
-                  message(e)
+                  } catch {
+                    case e: ResponseException =>
 
-              } finally {
+                    //throw e
 
+                    // In case of error, record to message
+                    case e: Throwable =>
+                      e.printStackTrace()
+                      message(e)
+
+                  } finally {
+
+                  }
               }
+
           }
 
           // Pass to children if closure did not throw anything out
@@ -203,11 +206,11 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
   final def up(message: Message): Unit = {
 
-    logInfo(s"${depthString("--")} [Up] Upstart is $upStart")
+    logInfo[Intermediary](s"${depthString("--")} [Up] Upstart is $upStart")
     // if the upStart is delocalized, and upping has not started, start at upStart
     if (this.upStart != null && this.upStart != this && message.upped == false) {
 
-      logInfo[this.type](s"${depthString("--")} [Up] Upstart is delocalized")
+      logInfo[Intermediary](s"${depthString("--")} [Up] Upstart is delocalized")
 
       this.upStart.up(message)
 
@@ -226,15 +229,15 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
       upClosure match {
         case null =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
+          logInfo[Intermediary](s"${depthString("--")} [Up] Rejected Intermediary ${name} no Up closure")
 
         case closure if (acceptUpClosures.forall(_(message)) == false) =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[Intermediary](s"${depthString("--")} [Up] Rejected Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 
         case closure =>
 
-          logInfo[this.type](s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
+          logInfo[Intermediary](s"${depthString("--")} [Up] Accepted Intermediary ${name} with filter: $filter with message: ${message.qualifier}")
 
           closure(message)
       }
@@ -273,7 +276,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
   }
   /*def response(responseMessage: Message): Unit = {
-    
+
     //throw new ResponseException(responseMessage)
 
   }*/
@@ -282,7 +285,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   //-------------------
 
   def detach = this.parentIntermediary match {
-    case null  =>
+    case null =>
     case other => other.-=(this)
   }
 
@@ -416,7 +419,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
       //-- Try to match
       cl(current) match {
-        case true  => res = Some(current)
+        case true => res = Some(current)
         case false =>
       }
 
@@ -502,7 +505,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
   def findChildOfType[T <: Intermediary](implicit tag: ClassTag[T]): Option[T] = {
     findChild(i => tag.runtimeClass.isInstance(i)) match {
       case Some(r) => Some(r.asInstanceOf[T])
-      case None    => None
+      case None => None
     }
   }
   /**
@@ -517,7 +520,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
 
       var current = childrenToProcess.pop
       cl(current) match {
-        case true  => res = Some(current)
+        case true => res = Some(current)
         case false => childrenToProcess ++= current.intermediaries
       }
 
@@ -526,7 +529,7 @@ trait Intermediary extends ElementBuffer with TLogSource with ListeningSupport {
     /*var res : Option[Intermediary] = None
     this.intermediaries.foreach {
       case i if (cl(i)==true) => res = Some(i)
-      case other => other.findChild(cl) 
+      case other => other.findChild(cl)
     }*/
 
     res

@@ -3,10 +3,6 @@
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -41,7 +37,12 @@ class NetworkContext extends ListeningSupport with ErrorSupport {
 
   this.onClose {
      if (enableInputPayloadSignaling) {
-        inputPayloadsSemaphore.release(Integer.MAX_VALUE)
+       try {
+        inputPayloadsSemaphore.release(inputPayloadsSemaphore.getQueueLength)
+       } catch {
+         case e : Throwable => 
+           inputPayloadsSemaphore.drainPermits()
+       }
       }
   }
   
@@ -67,7 +68,10 @@ class NetworkContext extends ListeningSupport with ErrorSupport {
   def waitForInputPayload(timeMS: Long) = {
     if (enableInputPayloadSignaling) {
       try {
+       // println("Releases before waiting: "+inputPayloadsSemaphore.availablePermits())
+       
         inputPayloadsSemaphore.tryAcquire(timeMS, TimeUnit.MILLISECONDS)
+       // println("Done")
       } catch {
         case e: Throwable =>
           e.printStackTrace()

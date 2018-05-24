@@ -4,10 +4,6 @@
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -146,6 +142,15 @@ trait Message extends ErrorSupport {
     this.addError(e)
 
   }
+  
+  // Ignoring
+  //----------------
+  
+  /**
+   * Set to true to ignore processing by current intermediary and keep going
+   * MUST be reset by basic intermediary implementation
+   */
+  var ignoreCurrentIntermediary = false
 
 }
 

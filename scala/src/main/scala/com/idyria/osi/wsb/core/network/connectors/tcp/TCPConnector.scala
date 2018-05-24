@@ -131,15 +131,11 @@ abstract class TCPConnector extends AbstractConnector[TCPNetworkContext] with Li
               // e.printStackTrace()
               logFine[TCPConnector]("Error on send, sending event close -> " + e.getLocalizedMessage);
 
-/*-
+              /*-
  * #%L
  * WSB Core
  * %%
  * Copyright (C) 2008 - 2017 OpenDesignFlow.org
-								Richard Leys (leys dot richard at gmail):
-								2008-2014 University of Heidelberg (Computer Architecture group)
-								2008-2014 Extoll GmbH (extoll.de)
-								2014-2017 University of Karlsruhe (KIT) - ASIC and Detector Lab
  * %%
  * This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -245,14 +241,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         }
 
       /* var NetworkContext.NetworkString(protocol, message, connectionString) = ctx.qualifier
-        
+
          println(s"------ Trying to match qualifier ${ctx.qualifier} ($connectionString , $protocol <-> ${this.protocolType}) against this connectors, target host: "+clientNetworkContext.socket.getRemoteAddress().asInstanceOf[InetSocketAddress].getHostName())
-        
-        
+
+
         ctx.qualifier match {
 
-          case NetworkContext.NetworkString(protocol, message, connectionString) if (protocol == this.protocolType && message == messageType) => 
-            
+          case NetworkContext.NetworkString(protocol, message, connectionString) if (protocol == this.protocolType && message == messageType) =>
+
             println(s"----------------> OK")
             true
           case _ => false
@@ -612,7 +608,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                           //-- Trigger received someting
                           networkContext.triggerInputPayloadSemaphore
-                          
 
                         // Protocol not ready
                         case None =>
@@ -867,27 +862,33 @@ abstract class TCPProtocolHandlerConnector[T](var protocolHandlerFactory: (TCPNe
 
     // Receive through Protocol handler
     //---------------
-    var handler = ProtocolHandler(context, protocolHandlerFactory)
-    handler.receive(buffer)
-    handler.availableDatas.size match {
-      case size if (size > 0) =>
+    try {
+      var handler = ProtocolHandler(context, protocolHandlerFactory)
+      handler.receive(buffer)
+      handler.getAvailableDataSize match {
+        case size if (size > 0) =>
 
-        logFine[TCPConnector]("Data found after protocol parsing")
+          logFine[TCPConnector]("Data found after protocol parsing")
 
-        var res = List[T]()
-        handler.availableDatas.foreach {
-          data => res = res :+ data
-        }
+          var res = List[T]()
+          handler.availableDatas.foreach {
+            data => res = res :+ data
+          }
 
-        @->("protocol.receive.endOfData")
-        handler.availableDatas.clear
+          @->("protocol.receive.endOfData")
+          handler.availableDatas.clear
 
-        Option(res)
+          Option(res)
 
-      case _ =>
-        logFine[TCPConnector](s"No data found after protocol parsing on $address:$port ")
-        logFine[TCPConnector](s" --> No data found after protocol parsing on $address:$port ")
-        None
+        case _ =>
+          logFine[TCPConnector](s"No data found after protocol parsing on $address:$port ")
+          logFine[TCPConnector](s" --> No data found after protocol parsing on $address:$port ")
+          None
+      }
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        throw e
     }
 
   }
@@ -1013,7 +1014,7 @@ class TCPNetworkContext(q: String) extends NetworkContext {
 
     socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getHostString
   }
-  
+
   def getRemoteHostIP = {
 
     socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress].getAddress.getHostAddress
